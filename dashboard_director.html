@@ -34,6 +34,27 @@ h1{font-size:1.2rem;color:var(--azul)}
 .kv2{font-size:.78rem;background:#f2f7fc;border-left:3px solid #0b6bcb;padding:7px 9px;border-radius:6px;margin:5px 0;white-space:pre-wrap;line-height:1.5}
 .two{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
 @media(max-width:760px){.two{grid-template-columns:1fr}}
+.idbar{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap;font-size:.8rem;color:#00509e}
+.idbar input{flex:1;min-width:240px;border:1px solid #b9c6d3;border-radius:8px;padding:7px 10px;font-size:.82rem;outline:none}
+.idbar input:focus{border-color:#0b6bcb}
+#idmsg{color:#c0392b;font-size:.75rem}
+.stabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.stab{border:1px solid #00a19a;background:#fff;color:#00a19a;padding:6px 12px;border-radius:16px;font-size:.78rem;cursor:pointer}
+.stab.on{background:#00a19a;color:#fff}
+.doc{font-size:.8rem;line-height:1.5}
+.doch{background:#00509e;color:#fff;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-weight:600}
+.doch small{font-weight:400;opacity:.85}
+.soapb{border:1px solid #dbe5ee;border-radius:8px;margin-bottom:8px;overflow:hidden}
+.soapb>b{display:block;background:#eef3f8;color:#00509e;padding:6px 9px;font-size:.78rem}
+.soapv{padding:8px 9px;min-height:56px;font-size:.79rem;white-space:pre-wrap;outline:none;line-height:1.5}
+.soapv:focus{background:#fffdf2}
+@media print{
+ body.printmode>*:not(#modal){display:none!important}
+ #modal{position:static;display:block!important;background:#fff;padding:0}
+ .mbox{box-shadow:none;max-height:none;overflow:visible;width:100%}
+ .mclose,.stabs{display:none!important}
+ .two{grid-template-columns:1fr!important}
+}
 .card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:14px}
 .card h2{font-size:.95rem;color:var(--azul);margin-bottom:10px}
 .funnel div{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:.8rem}
@@ -73,11 +94,13 @@ footer{margin-top:10px;font-size:.7rem;color:var(--gris);text-align:center}
   <div>
     <div class="card">
       <h2>Episodios de preconsulta</h2>
+      <div class="idbar">🔍 <input id="idq" placeholder="Consulta por ID — documento (ej. 4821), nombre del paciente o ID de sesión (S…)" onkeydown="if(event.key==='Enter')consultarPorId()"><button class="btn-sm" style="background:#00509e;padding:7px 14px" onclick="consultarPorId()">Consultar ID</button><span id="idmsg"></span></div>
       <div class="tabs">
         <button class="tab on" data-v="todos">Todos</button>
         <button class="tab" data-v="llamadas">📞 Cola de llamadas</button>
         <button class="tab" data-v="medica">🩺 Bandeja médica (conciliación)</button>
         <button class="tab" data-v="resueltos">✅ Resueltos / enrutados</button>
+        <button class="tab" data-v="entregables">📄 Entregables (consulta por ID)</button>
       </div>
       <div class="scroll"><table id="tabla"><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
     </div>
@@ -112,9 +135,15 @@ footer{margin-top:10px;font-size:.7rem;color:var(--gris);text-align:center}
  <div class="mbox">
   <button class="mclose" onclick="cerrarDetalle()">✕ Cerrar</button>
   <h2 id="mTitle"></h2>
+  <div class="stabs">
+   <button class="stab" data-s="0" onclick="seccionModal(0)">💬 Interacción</button>
+   <button class="stab" data-s="1" onclick="seccionModal(1)">📄 Entregable</button>
+   <button class="stab" data-s="2" onclick="seccionModal(2)">🩺 Nota SOAP</button>
+   <button class="stab" style="margin-left:auto;border-color:#00509e;color:#00509e" onclick="imprimir()">🖨️ Imprimir / PDF</button>
+  </div>
   <div class="two">
-   <div><h3>💬 Transcripción exacta de la interacción con el chatbot</h3><div id="mChat"></div></div>
-   <div><h3>🧭 Contexto exacto de la decisión (¿por qué esta ruta?)</h3><div id="mCtx"></div></div>
+   <div id="secWrap"><h3 id="hSec">💬 Transcripción exacta de la interacción (bot o llamada)</h3><div id="sec0"></div></div>
+   <div id="secCtx"><h3>🧭 Contexto exacto de la decisión (¿por qué esta ruta?)</h3><div id="mCtx"></div></div>
   </div>
  </div>
 </div>
@@ -191,6 +220,9 @@ function render(){
  if(vista==='medica'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Propuesta</th><th>Criterio de la propuesta (por qué)</th><th>Verificación y decisión del médico</th>';
   rows=pacientes.filter(p=>p.estado==='Completa'&&!p.fin).map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d} · ${p.canal}</small></td><td>${p.cita}</td><td>${tagR(p.prop)}${p.br?' <span class="tag r-RX">Bandera roja</span>':''}</td><td style="max-width:380px;white-space:normal"><b>${esc(CORTO[p.prop]||'—')}</b><br><small style="color:#5b6b7b">${esc(gatillo(p))}</small><br><button class="btn-sm" style="background:#00a19a" onclick="abrirDetalle('${p.uid}')">💬 Ver interacción y contexto completo</button></td><td><button class="btn-sm" onclick="conciliar('${p.d}',true)">✅ Aceptar propuesta</button><button class="btn-sm sec" onclick="conciliar('${p.d}',false)"> Mantener MI presencial</button></td></tr>`);
   if(!rows.length)rows=['<tr><td colspan="5">✅ Bandeja de conciliación vacía</td></tr>']}
+ if(vista==='entregables'){th.innerHTML='<th>ID</th><th>Paciente</th><th>Canal / estado</th><th>Tipo de entregable</th><th>Abrir</th>';
+  const tEnt={R1:'PRE-RES-01 (administrativo)',R2:'PRE-MG-01 → Médico General',R3:'Telexperticia MG→MI',R4:'PRE-MI-01 → Internista',RX:'Alerta RX (urgencias)',TEL:'Registro PRE-TEL-01',NOP:'Sin entregable (no participa)'};
+  rows=pacientes.map(p=>`<tr><td><b>${esc(String(p.uid))}</b></td><td>${esc(p.n)}<br><small>${esc(p.d)}</small></td><td>${esc(p.canal)} · ${esc(p.estado)}</td><td>${esc(tEnt[p.prop]||'—')}</td><td style="white-space:nowrap"><button class="btn-sm sec" onclick="abrirDetalle('${p.uid}',1)">📄 Entregable</button> <button class="btn-sm" style="background:#00a19a" onclick="abrirDetalle('${p.uid}',0)">💬 Interacción</button> <button class="btn-sm" style="background:#7c5cbf" onclick="abrirDetalle('${p.uid}',2)">🩺 SOAP</button></td></tr>`)}
  if(vista==='resueltos'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Canal</th><th>Enrutamiento final</th><th>Entregable</th><th>Satisf.</th>';
   const ent={R1:'PRE-RES-01 (trámite)',R2:'PRE-MG-01 a Medicina General',R3:'Telexperticia MG→Internista',R4:'PRE-MI-01 al internista'};
   rows=pacientes.filter(p=>p.estado==='Resuelto').map(p=>`<tr><td><b>${p.n}</b></td><td>${p.cita}</td><td>${p.canal}</td><td>${tagR(p.fin)}</td><td>${ent[p.fin]||'—'}</td><td>${p.sat?'⭐'+p.sat:'—'}</td><td><button class="btn-sm sec" onclick="abrirDetalle('${p.uid}')">💬 Ver interacción</button></td></tr>`)}
@@ -324,6 +356,61 @@ function entregaTexto(p){
   TEL:'Guion PRE-TEL-01 → preconsulta telefónica por el agente supervisado',
   NOP:'Sin participación — cita intacta (libre escogencia)'}[p.prop]||'—';
 }
+function objetivoEsp(p){
+ if(p.ses)return p.ses.objetivo||'—';
+ const r=respPorRuta(p);
+ if(p.prop==='R2')return p.tipo==='Primera vez'?'Diagnóstico inicial del síntoma + ordenar exámenes de preparación para MI':'Control y reformulación integral; exámenes de preparación para MI si aplican';
+ if(p.prop==='R1')return 'Trámite: '+r.motivo;
+ if(p.prop==='R4')return 'Valoración integral del especialista y actualización del plan de cuidado';
+ return 'Definir la necesidad en consulta';
+}
+function entregableHtml(p){
+ const r=respPorRuta(p);
+ const tipo={R1:'PRE-RES-01 — Resolución administrativa',R2:'PRE-MG-01 — ENTREGABLE AL MÉDICO GENERAL',R3:'TELEXPERTICIA — Interconsulta MG → Internista',R4:'PRE-MI-01 — RESUMEN PREVIO PARA EL INTERNISTA',RX:'ALERTA RX — Bandera roja',TEL:'PRE-TEL-01 — Registro de preconsulta telefónica',NOP:'SIN ENTREGABLE — paciente no participa'}[p.prop]||'—';
+ const enc=`<div class="doch">📄 ${tipo}<br><small>ID interacción: ${esc(String(p.uid))} · Canal: ${esc(p.canal)} · Fecha: ${esc(p.ses?p.ses.fecha:'—')} · Estado: ${esc(p.ses?p.ses.estado:p.estado)}</small></div>`;
+ const ide=`<div class="kv2">Paciente: ${esc(p.n)} · ${esc(p.d)}\nCita MI original: ${esc(p.cita)} (${esc(p.tipo)})\nConsentimiento digital: Sí (Res. 2654/2019 art. 7) · Banderas rojas: ${p.prop==='RX'?'SÍ':'No'}</div>`;
+ const res=`<div class="kv2">RESUMEN DE LA ENTREVISTA (preconsulta)\nMotivo (palabras del paciente): ${esc((p.ses&&p.ses.motivo)||r.motivo)}\nObjetivo declarado: ${esc((p.ses&&p.ses.objetivo)||r.objetivo)}\nSíntomas nuevos/empeoramiento: ${esc((p.ses&&p.ses.sn)||r.sn)}\nExámenes recientes: ${esc((p.ses&&p.ses.exa)||r.exa)}\nMedicamentos permanentes: ${esc((p.ses&&p.ses.meds)||r.meds)}</div>`;
+ const traz=`<div class="kv2">TRAZABILIDAD\nPropuesta del motor: ${esc(p.prop)} · Regla: ${esc(CORTO[p.prop]||'—')}\nConciliación médica: ${esc(p.fin?(p.fin==='R4'?'MANTENER MI presencial':'propuesta aceptada → '+p.fin):'pendiente de revisión')}\nMédico revisor: ${p.fin?'[nombre y registro del médico]':'—'}</div>`;
+ let cuerpo='';
+ if(p.prop==='R2'){
+  cuerpo=enc+ide+res+
+  `<div class="rule"><b>OBJETIVO ESPECÍFICO DE ESTA CONSULTA MG:</b><br>☑ ${esc(objetivoEsp(p))}<br><br><b>Criterio de retorno a Medicina Interna:</b> remitir a MI solo si [criterios del árbol firmado por el internista]; en caso contrario cerrar el episodio en MG.<br><b>Opción del paciente:</b> puede responder MANTENER para conservar su cita con el especialista.</div>`+traz+
+  `<p style="font-size:.7rem;color:#5b6b7b">Documento soporte anexable a la historia clínica — Res. 2654/2019 art. 13 par. 2; Res. 1995/1999. Entregado a: médico general de turno.</p>`;
+ }else if(p.prop==='R4'){
+  cuerpo=enc+ide+res+
+  `<div class="rule"><b>CITA DE MEDICINA INTERNA: CONFIRMADA</b> — ${esc(p.cita)}<br>El especialista recibe este resumen ANTES de la consulta para llegar con el objetivo real del paciente.</div>`+traz+
+  `<p style="font-size:.7rem;color:#5b6b7b">Documento soporte anexable a la historia clínica — Res. 2654/2019 art. 7 y 13 par. 2. Entregado a: internista a cargo.</p>`;
+ }else if(p.prop==='R3'){
+  cuerpo=enc+ide+res+
+  `<div class="rule"><b>TELEXPERTICIA (Res. 2654/2019 art. 17):</b> caso estructurado enviado al internista con respuesta en menos de 24 h hábiles. El MG que atiende presencialmente decide la conducta; el internista responde por la calidad de su opinión y la consigna en la HC.</div>`+traz;
+ }else if(p.prop==='R1'){
+  cuerpo=enc+ide+res+`<div class="rule"><b>ACCIÓN:</b> ${esc(entregaTexto(p))}<br>Compromiso de solución: 5 días hábiles · Cita MI liberada previa conciliación médica.</div>`+traz;
+ }else if(p.prop==='RX'){
+  cuerpo=enc+ide+`<div class="rule"><b>BANDERA ROJA:</b> escalamiento inmediato al supervisor de salud; el paciente fue instruido para acudir a urgencias; cita protegida para reprogramación.</div>`+traz;
+ }else{
+  cuerpo=enc+ide+`<div class="kv2">${esc(entregaTexto(p))}<br>Respuestas registradas en el canal original de la interacción.</div>`+traz;
+ }
+ return '<div class="doc">'+cuerpo+'</div>';
+}
+function soapBlock(t,v,fijo){
+ return '<div class="soapb"><b>'+t+(fijo?' <small style="color:#1e8e5a">· generado automáticamente</small>':' <small style="color:#c77700">· editable por el profesional</small>')+'</b><div class="soapv" contenteditable="true">'+esc(v).replace(/\n/g,'<br>')+'</div></div>';
+}
+function soapHtml(p){
+ const r=respPorRuta(p);
+ const motivo=(p.ses&&p.ses.motivo)||r.motivo;
+ const obj=(p.ses&&p.ses.objetivo)||r.objetivo;
+ const sn=(p.ses&&p.ses.sn)||r.sn;
+ const exa=(p.ses&&p.ses.exa)||r.exa;
+ const meds=(p.ses&&p.ses.meds)||r.meds;
+ const S='Paciente '+p.n+' ('+p.d+') contactado por preconsulta para cita '+p.cita+' ('+p.tipo+'), canal '+p.canal+'.\nRefiere motivo: "'+motivo+'".\nObjetivo del paciente: "'+obj+'".\nSíntomas nuevos o empeoramiento: '+sn+'.\nExámenes recientes disponibles: '+exa+'.\nMedicamentos permanentes: '+meds+'.\nBanderas rojas: negativas en el filtro previo.';
+ const O='Registro de preconsulta — ID '+p.uid+' · canal '+p.canal+' · fecha '+(p.ses?p.ses.fecha:'—')+' · consentimiento digital: Sí.\nFiltro de banderas rojas: NEGATIVO.\nConstantes vitales y examen físico: NO recolectados en preconsulta (se toman en la consulta).';
+ const E='Propuesta del motor (árbol firmado por el internista): '+p.prop+' — '+(CORTO[p.prop]||'—')+'\n'+gatillo(p)+'\nConciliación médica: '+(p.fin?(p.fin==='R4'?'mantener MI presencial':'propuesta aceptada → '+p.fin):'pendiente')+'\n\n✍️ VALORACIÓN Y DIAGNÓSTICO DEL PROFESIONAL:';
+ const P='Plan derivado de la ruta '+p.prop+': '+entregaTexto(p)+(p.prop==='R2'?'\nObjetivo específico MG: '+objetivoEsp(p)+'\nCriterio de retorno a MI: [árbol firmado]':'')+'\n\n✍️ PLAN ADICIONAL DEL PROFESIONAL:';
+ return soapBlock('S — Subjetivo',S,true)+soapBlock('O — Objetivo',O,true)+soapBlock('E — Evaluación / Análisis',E,false)+soapBlock('P — Plan',P,false)+
+ '<p style="font-size:.7rem;color:#5b6b7b">Nota modular SOAP generada a partir de la preconsulta; los bloques E y P son editables por el profesional antes de guardar. Compatible con registro clínico estructurado (Res. 1995/1999; Ley 2015/2020 — HCE interoperable).</p>';
+}
+function imprimir(){document.body.classList.add('printmode');window.print()}
+window.addEventListener('afterprint',()=>document.body.classList.remove('printmode'));
 function contexto(p){
  const r=respPorRuta(p);
  let objMG='';
@@ -339,13 +426,39 @@ function contexto(p){
  h+='<p style="font-size:.7rem;color:#5b6b7b;margin-top:8px">Sustento: Res. 2654/2019 arts. 5 (autonomía), 7 (consentimiento), 10 (resumen al usuario), 12.2 (divulgación de IA), 17 (telexperticia) · El sistema propone; la decisión clínica final siempre es humana.</p>';
  return h;
 }
-function abrirDetalle(uid){
- const p=pacientes.find(x=>x.uid===uid); if(!p)return;
- document.getElementById('mTitle').textContent='Interacción y decisión — '+p.n+' · cita '+p.cita+' · propuesta '+p.prop+(p.ses?' (interacción real del demo)':' (caso de ejemplo del lote)');
+let curUid=null;
+function seccionModal(n){
+ curSec=n;
+ const tit=['💬 Transcripción exacta de la interacción (bot o llamada)','📄 Entregable generado para el profesional','🩺 Nota modular SOAP (S-O-A-P)'][n];
+ document.getElementById('hSec').textContent=tit;
+ const cont=document.getElementById('sec0');
+ cont.style.display='block';
+ if(n===0)cont.innerHTML=chatHtml();
+ else if(n===1)cont.innerHTML=entregableHtml(cur);
+ else cont.innerHTML=soapHtml(cur);
+ document.querySelectorAll('.stab[data-s]').forEach(b=>b.classList.toggle('on',+b.dataset.s===n));
+}
+function chatHtml(){
+ const p=cur;
  const chat=(p.ses&&p.ses.trans&&p.ses.trans.length)?p.ses.trans:transEjemplo(p);
- document.getElementById('mChat').innerHTML=chat.map(m=>{const w=Array.isArray(m)?m[0]:m.w;const t=Array.isArray(m)?m[1]:m.t;return '<div class="bub '+(w==='u'?'u':'b')+'">'+esc(t)+'</div>'}).join('')+'<p style="font-size:.7rem;color:#5b6b7b">'+(p.canal==='Teléfono'?'Registro literal de la llamada telefónica (guion PRE-TEL-01).':'Transcripción literal de la conversación con el asistente virtual.')+'</p>';
+ return chat.map(m=>{const w=Array.isArray(m)?m[0]:m.w;const t=Array.isArray(m)?m[1]:m.t;return '<div class="bub '+(w==='u'?'u':'b')+'">'+esc(t)+'</div>'}).join('')+'<p style="font-size:.7rem;color:#5b6b7b">'+(p.canal==='Teléfono'?'Registro literal de la llamada telefónica (guion PRE-TEL-01).':'Transcripción literal de la conversación con el asistente virtual.')+'</p>';
+}
+let cur=null,curSec=0;
+function abrirDetalle(uid,sec){
+ const p=pacientes.find(x=>x.uid===uid); if(!p)return; cur=p;
+ document.getElementById('mTitle').textContent='ID '+String(p.uid)+' — '+p.n+' · cita '+p.cita+' · propuesta '+p.prop+(p.ses?' (interacción real del demo)':' (caso de ejemplo del lote)');
  document.getElementById('mCtx').innerHTML=contexto(p);
+ seccionModal(sec||0);
  document.getElementById('modal').classList.add('show');
+}
+function consultarPorId(){
+ const q=(document.getElementById('idq').value||'').trim().toLowerCase();
+ const msg=document.getElementById('idmsg');
+ if(!q){msg.textContent='Escriba un ID (documento, nombre o S…)';return}
+ const p=pacientes.find(x=>String(x.uid).toLowerCase()===q||x.d.toLowerCase().includes(q)||x.n.toLowerCase().includes(q)||String(x.uid).toLowerCase().includes(q));
+ if(!p){msg.textContent='ID no encontrado en el lote de demo';return}
+ msg.textContent='';
+ abrirDetalle(p.uid,1);
 }
 function cerrarDetalle(){document.getElementById('modal').classList.remove('show')}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrarDetalle()});
