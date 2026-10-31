@@ -71,13 +71,27 @@ Demo educativa. Flujo amparado en: Res. 2654/2019 (teleorientación, arts. 7–1
 </footer>
 <script>
 const chat=document.getElementById('chat'),estado=document.getElementById('estado'),entregable=document.getElementById('entregable'),acciones=document.getElementById('acciones');
-const S={br:[],motivo:'',tipo:'',objetivo:'',sn:'',meds:'',exa:'',ruta:null,sat:0};
+const S={br:[],motivo:'',tipo:'',objetivo:'',sn:'',meds:'',exa:'',ruta:null,sat:0,ident:''};
 function scrollDown(){chat.scrollTop=chat.scrollHeight}
 function botMsg(t,norma,cb){const ty=document.createElement('div');ty.className='typing';ty.textContent='escribiendo…';chat.appendChild(ty);scrollDown();setTimeout(()=>{ty.remove();const d=document.createElement('div');d.className='msg bot';d.textContent=t;chat.appendChild(d);if(norma){const n=document.createElement('div');n.className='norma';n.textContent='⚖️ '+norma;chat.appendChild(n)}scrollDown();if(cb)cb()},450)}
 function userMsg(t){const d=document.createElement('div');d.className='msg user';d.textContent=t;chat.appendChild(d);scrollDown()}
 function options(list){const c=document.createElement('div');c.className='opts';list.forEach(o=>{const b=document.createElement('button');b.className='opt'+(o.cls?' '+o.cls:'');b.textContent=o.t;b.onclick=()=>{c.remove();userMsg(o.t);o.fn()};c.appendChild(b)});chat.appendChild(c);scrollDown()}
 function textInput(ph,cb){const r=document.createElement('div');r.className='inputrow';const i=document.createElement('input');i.placeholder=ph;const s=document.createElement('button');s.className='send';s.textContent='➤';const go=()=>{if(!i.value.trim())return;const v=i.value.trim();r.remove();userMsg(v);cb(v)};s.onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()};r.appendChild(i);r.appendChild(s);chat.appendChild(r);i.focus();scrollDown()}
 function setEstado(t){estado.textContent=t}
+function guardarSesion(ruta,razon,ent,estado){
+ try{
+  const tr=[...chat.querySelectorAll('.msg')].map(m=>({w:m.classList.contains('user')?'u':'b',t:m.textContent}));
+  const arr=JSON.parse(localStorage.getItem('preconsulta_sesiones')||'[]');
+  arr.push({id:Date.now(),ident:S.ident,tipo:S.tipo,motivo:S.motivo,objetivo:S.objetivo,sn:S.sn,exa:S.exa,meds:S.meds,br:S.br,ruta:ruta,razon:razon,ent:ent,trans:tr,fecha:new Date().toLocaleString('es-CO'),estado:estado||'Pendiente conciliación médica'});
+  localStorage.setItem('preconsulta_sesiones',JSON.stringify(arr.slice(-20)));
+ }catch(e){}
+}
+function actualizarTrans(){
+ try{
+  const arr=JSON.parse(localStorage.getItem('preconsulta_sesiones')||'[]');
+  if(arr.length){arr[arr.length-1].trans=[...chat.querySelectorAll('.msg')].map(m=>({w:m.classList.contains('user')?'u':'b',t:m.textContent}));localStorage.setItem('preconsulta_sesiones',JSON.stringify(arr))}
+ }catch(e){}
+}
 function inicio(){
  setEstado('📋 Cita MI programada (demo) → contacto iniciado T-96h por WhatsApp');
  botMsg('👋 ¡Hola! Le damos la bienvenida al servicio de Medicina Interna de Colsubsidio.\n\nSoy un asistente virtual (inteligencia artificial) de [Prestador IPS, NIT], responsable de esta plataforma. Voy a preparar su cita del jueves 05 de noviembre, 8:40 a.m.','Res. 2654/2019 art. 12.2: la teleorientación con IA debe informarse al usuario indicando el responsable.',()=>{
@@ -90,6 +104,7 @@ function inicio(){
 function identidad(){
  botMsg('Para proteger su información, escriba en un solo mensaje: los últimos 4 dígitos de su documento y su fecha de nacimiento.\nEjemplo: 4821 - 15/03/1968','Res. 2654/2019 art. 12.3: identificación del usuario (política de seguridad del paciente).',()=>{
  textInput('Ej: 4821 - 15/03/1968',v=>{
+  S.ident=v;
   setEstado('🔐 Identidad verificada contra la cita programada (en producción: validación real / OTP)');
   botMsg('¡Gracias! Identidad confirmada. 😊','',banderasRojas)})})}
 function banderasRojas(){
@@ -108,18 +123,21 @@ function roja(br){
  entregable.textContent='ALERTA RX → bandeja del supervisor de salud. Paciente: cita MI 05-nov 8:40 a.m. Bandera: "'+br+'". Acción: llamada del equipo en <15 min.';
  acciones.innerHTML='<span class="tag t-rx">RX · URGENCIAS</span> Supervisor notificado · Cita protegida para reprogramación';
  botMsg('⚠️ Por su seguridad, le recomendamos acudir AHORA a urgencias o llamar a la línea de urgencias de Colsubsidio [número].\n\nSu cita queda protegida y la reprogramaremos. Un miembro del equipo de salud lo contactará en los próximos minutos.','Recomendación conservadora; la decisión final es del equipo humano (Ley 1751/2015 art. 17).',()=>{
+ guardarSesion('RX','Regla 1 (máxima prioridad): bandera roja reportada → recomendación de urgencias + alerta humana inmediata','ALERTA RX → bandeja del supervisor de salud (escalamiento <15 min)','Alerta activa — equipo humano notificado');
  options([{t:'🔄 Simular otro paciente',fn:reiniciar}])})}
 function canalTelefono(){
  setEstado('📞 Paciente pidió llamada → COLA DE LLAMADAS del dashboard (insumo del agente administrativo)');
  entregable.textContent='Registro: "prefiere llamada". El agente ejecutará el guion PRE-TEL-01 (mismo árbol), supervisado por personal de salud (Res. 2654/2019 art. 6, parágrafo).';
  acciones.innerHTML='Dashboard → cola de llamadas: +1 pendiente · Responsable: agente de preconsulta telefónica';
  botMsg('¡Perfecto! Un miembro de nuestro equipo lo llamará al número registrado dentro de las próximas 24 horas hábiles. Su cita del 05 de noviembre se mantiene sin cambios. 😊','Res. 2654/2019 arts. 9-10 (teleorientación humana); art. 4 (libre escogencia).',()=>{
+ guardarSesion('TEL','Paciente eligió canal telefónico → cola de llamadas del dashboard (guion PRE-TEL-01)','Registro: paciente pide llamada; agente administrativo aplica el mismo árbol','En cola de llamada');
  options([{t:'🔄 Simular otro paciente',fn:reiniciar}])})}
 function noParticipa(){
  setEstado('❌ Paciente no acepta preconsulta → cita MI intacta (libre escogencia). Dashboard registra "no participa".');
  entregable.textContent='Sin datos clínicos recolectados (no hubo autorización). La cita sigue el flujo tradicional.';
  acciones.innerHTML='Ninguna acción. Cita intacta.';
  botMsg('Entendido, sin problema. Su cita del jueves 05 de noviembre a las 8:40 a.m. se mantiene exactamente igual. Lo esperamos. 😊','Res. 2654/2019 art. 4: libre escogencia.',()=>{
+ guardarSesion('NOP','Usuario no aceptó la preconsulta → cita intacta (libre escogencia, Res. 2654/2019 art. 4)','Sin datos clínicos recolectados','No participa — cita intacta');
  options([{t:'🔄 Simular otro paciente',fn:reiniciar}])})}
 function tipoConsulta(){
  botMsg('¿Su cita del 05 de noviembre es…','',()=>{
@@ -183,15 +201,18 @@ function resolver(){
  if(ruta==='R4')ent='PRE-MI-01 → Resumen previo para el INTERNISTA\nMotivo real: '+S.motivo+' · Objetivo: '+S.objetivo+'\nSíntomas nuevos: '+S.sn+' · Exámenes: '+S.exa+' · Medicamentos: '+S.meds+'\nCita MI: CONFIRMADA 05-nov 8:40 a.m.';
  entregable.textContent=ent;
  acciones.innerHTML='<span class="tag '+tagCls+'">'+ruta+' · '+nombres[ruta]+'</span><br><br>Dashboard: "Entrevista completa — pendiente conciliación médica" · Consentimiento y resumen anexables a la HC';
- botMsg('¡Listo! Este es el resumen de lo que me contó:\n\n• Motivo: '+S.motivo+' ('+S.tipo+')\n• Objetivo: '+S.objetivo+'\n• Síntomas nuevos o empeoramiento: '+S.sn+'\n• Exámenes recientes: '+S.exa+'\n• Medicamentos permanentes: '+S.meds+'\n\nUn médico revisará sus respuestas y a más tardar mañana le confirmaremos: si su cita con el internista se mantiene, o si primero lo verá un médico general con un objetivo claro para adelantar todo.','Res. 2654/2019 art. 10: resumen al usuario. La cita NO se cancela automáticamente: decide el médico revisor.',()=>satisfaccion())}
+ botMsg('¡Listo! Este es el resumen de lo que me contó:\n\n• Motivo: '+S.motivo+' ('+S.tipo+')\n• Objetivo: '+S.objetivo+'\n• Síntomas nuevos o empeoramiento: '+S.sn+'\n• Exámenes recientes: '+S.exa+'\n• Medicamentos permanentes: '+S.meds+'\n\nUn médico revisará sus respuestas y a más tardar mañana le confirmaremos: si su cita con el internista se mantiene, o si primero lo verá un médico general con un objetivo claro para adelantar todo.','Res. 2654/2019 art. 10: resumen al usuario. La cita NO se cancela automáticamente: decide el médico revisor.',()=>{
+ guardarSesion(ruta,razon,ent,'Pendiente conciliación médica');
+ satisfaccion()})}
 function satisfaccion(){
  botMsg('Antes de terminar: del 1 al 5, ¿qué tan útil le pareció esta preparación? (5 = muy útil)','Indicador IR-8 (satisfacción / PREM) · Res. 1315/2026 (humanización).',()=>{
  const c=document.createElement('div');c.className='stars';
  for(let i=1;i<=5;i++){const sp=document.createElement('span');sp.textContent='⭐';sp.onclick=()=>{for(let j=0;j<5;j++)c.children[j].classList.toggle('on',j<i);setTimeout(()=>{c.remove();userMsg('⭐'.repeat(i));S.sat=i;cierre()},350)};c.appendChild(sp)}
  chat.appendChild(c);scrollDown()})}
 function cierre(){
- setEstado(estado.textContent+'\n⭐ Satisfacción registrada: '+S.sat+'/5 → dashboard');
- botMsg('¡Muchas gracias! Sus respuestas ya están con el equipo médico. Si presenta dolor de pecho, falta de aire u otro síntoma de alarma, acuda de inmediato a urgencias.\n\nNos vemos pronto. 💙','',()=>{
+ setEstado(estado.textContent+'\n⭐ Satisfacción registrada: '+S.sat+'/5 → dashboard\n💬 Transcripción y contexto de la decisión guardados → visibles en el Dashboard (botón "Ver interacción")');
+ actualizarTrans();
+ botMsg('¡Muchas gracias! Sus respuestas ya están con el equipo médico. Si presenta dolor de pecho, falta de aire u otro síntoma de alarma, acuda de inmediato a urgencias.\n\n📌 Esta conversación y el contexto de la decisión quedan registrados: el equipo puede verlos en el Dashboard del Director (botón "Ver interacción").\n\nNos vemos pronto. 💙','',()=>{
  options([{t:'🔄 Simular otro paciente',fn:reiniciar},{t:'📊 Ver dashboard del director',cls:'alt',fn:()=>window.open('dashboard_director.html','_blank')}])})}
 function reiniciar(){chat.innerHTML='';S.br=[];S.motivo='';S.tipo='';S.objetivo='';S.sn='';S.meds='';S.exa='';S.ruta=null;S.sat=0;entregable.textContent='—';acciones.textContent='—';inicio()}
 inicio();

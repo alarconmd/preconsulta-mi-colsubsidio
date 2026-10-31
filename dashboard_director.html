@@ -20,6 +20,20 @@ h1{font-size:1.2rem;color:var(--azul)}
 .kpi.warn .n{color:var(--warn)} .kpi.red .n{color:var(--red)} .kpi.ok .n{color:var(--ok)}
 .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
 @media(max-width:980px){.grid{grid-template-columns:1fr}}
+.r-TEL{background:#7c5cbf}.r-NOP{background:#5b6b7b}.r-demo{background:#0b6bcb}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;align-items:center;justify-content:center;padding:16px}
+.modal.show{display:flex}
+.mbox{background:#fff;border-radius:14px;max-width:960px;width:100%;max-height:88vh;overflow-y:auto;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.mbox h2{font-size:1rem;color:#00509e;margin-bottom:8px;padding-right:70px}
+.mbox h3{font-size:.78rem;color:#00a19a;margin:10px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+.mclose{float:right;border:none;background:#eef3f8;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.8rem}
+.bub{max-width:88%;padding:7px 10px;border-radius:9px;font-size:.78rem;margin:5px 0;white-space:pre-wrap;line-height:1.35}
+.bub.b{background:#f1f6fb;border-left:3px solid #0b6bcb}
+.bub.u{background:#e7f8ee;border-left:3px solid #1e8e5a;margin-left:auto}
+.rule{background:#fff4e5;border-left:4px solid #c77700;border-radius:8px;padding:9px 11px;font-size:.8rem;margin:8px 0;line-height:1.45}
+.kv2{font-size:.78rem;background:#f2f7fc;border-left:3px solid #0b6bcb;padding:7px 9px;border-radius:6px;margin:5px 0;white-space:pre-wrap;line-height:1.5}
+.two{display:grid;grid-template-columns:1.15fr 1fr;gap:14px}
+@media(max-width:760px){.two{grid-template-columns:1fr}}
 .card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:14px}
 .card h2{font-size:.95rem;color:var(--azul);margin-bottom:10px}
 .funnel div{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:.8rem}
@@ -94,6 +108,16 @@ footer{margin-top:10px;font-size:.7rem;color:var(--gris);text-align:center}
     </div>
   </div>
 </div>
+<div class="modal" id="modal">
+ <div class="mbox">
+  <button class="mclose" onclick="cerrarDetalle()">✕ Cerrar</button>
+  <h2 id="mTitle"></h2>
+  <div class="two">
+   <div><h3>💬 Transcripción exacta de la interacción con el chatbot</h3><div id="mChat"></div></div>
+   <div><h3>🧭 Contexto exacto de la decisión (¿por qué esta ruta?)</h3><div id="mCtx"></div></div>
+  </div>
+ </div>
+</div>
 <footer>Demo funcional con datos simulados. Rol interventora: misma vista en modo solo lectura. Trazabilidad completa de consentimientos, decisiones médicas y llamadas (Res. 2654/2019; Ley 1581/2012). <a href="chatbot_preconsulta.html">← Volver al demo del chatbot</a></footer>
 <script>
 const pacientes=[
@@ -119,6 +143,14 @@ function hora(){return new Date().toLocaleTimeString('es-CO',{hour:'2-digit',min
 function addFeed(t){const d=document.createElement('div');d.innerHTML='<time>'+hora()+'</time>'+t;feedEl.prepend(d)}
 function tagE(e){const m={'Enviado':'e-enviado','En conversación':'e-conv','Completa':'e-completa','No responde':'e-noresp','Pidió llamada':'e-llamada','Resuelto':'e-resuelto'};return '<span class="tag '+m[e]+'">'+e+'</span>'}
 function tagR(r){return r?'<span class="tag r-'+r+'">'+r+'</span>':'<span class="tag r-NA">—</span>'}
+// Interacciones REALES guardadas por el demo del chatbot (mismo navegador / misma página web)
+pacientes.forEach(p=>{if(!p.uid)p.uid=p.d});
+let reales=[];
+try{reales=JSON.parse(localStorage.getItem('preconsulta_sesiones')||'[]')}catch(e){}
+reales.slice().reverse().forEach(s=>{
+ pacientes.unshift({uid:'S'+s.id,n:'🎤 Interacción real (demo)',d:'doc ****'+(s.ident?s.ident.slice(0,4):'—'),tipo:s.tipo||'—',cita:'sesión local',canal:'Bot',estado:'Completa',intentos:0,prop:s.ruta,fin:'',sat:0,ses:s});
+});
+if(reales.length)setTimeout(()=>addFeed('💬 '+reales.length+' interacción(es) real(es) del demo del chatbot cargadas desde este navegador — pulse "Ver interacción"'),600);
 let vista='todos';
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');vista=b.dataset.v;render()});
 function kpis(){
@@ -152,7 +184,7 @@ function kpis(){
 function render(){
  const th=document.getElementById('thead'),tb=document.getElementById('tbody');
  let rows=[];
- if(vista==='todos'){th.innerHTML='<th>Paciente</th><th>Tipo cita</th><th>Cita MI</th><th>Canal</th><th>Estado</th><th>Propuesta</th><th>Decisión médica</th><th>Satisf.</th>';rows=pacientes.map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d}</small></td><td>${p.tipo}</td><td>${p.cita}</td><td>${p.canal}</td><td>${tagE(p.estado)}${p.br?' <span class="tag r-RX">🚨</span>':''}</td><td>${tagR(p.prop)}</td><td>${tagR(p.fin)}</td><td>${p.sat?'⭐'+p.sat:'—'}</td></tr>`)}
+ if(vista==='todos'){th.innerHTML='<th>Paciente</th><th>Tipo cita</th><th>Cita MI</th><th>Canal</th><th>Estado</th><th>Propuesta</th><th>Decisión médica</th><th>Satisf.</th><th>Interacción</th>';rows=pacientes.map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d}</small></td><td>${p.tipo}</td><td>${p.cita}</td><td>${p.canal}</td><td>${tagE(p.estado)}${p.br?' <span class="tag r-RX">🚨</span>':''}</td><td>${tagR(p.prop)}</td><td>${tagR(p.fin)}</td><td>${p.sat?'⭐'+p.sat:'—'}</td><td><button class="btn-sm sec" onclick="abrirDetalle('${p.uid}')">💬 Ver interacción</button></td></tr>`)}
  if(vista==='llamadas'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Estado</th><th>Intentos</th><th>Acción (agente)</th>';
   rows=pacientes.filter(p=>['No responde','Pidió llamada'].includes(p.estado)).map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d}</small></td><td>${p.cita}</td><td>${tagE(p.estado)}</td><td>${p.intentos}</td><td><button class="btn-sm" onclick="llamar('${p.d}')">Registrar llamada</button></td></tr>`);
   if(!rows.length)rows=['<tr><td colspan="5">✅ Cola de llamadas vacía</td></tr>']}
@@ -161,7 +193,7 @@ function render(){
   if(!rows.length)rows=['<tr><td colspan="4">✅ Bandeja de conciliación vacía</td></tr>']}
  if(vista==='resueltos'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Canal</th><th>Enrutamiento final</th><th>Entregable</th><th>Satisf.</th>';
   const ent={R1:'PRE-RES-01 (trámite)',R2:'PRE-MG-01 a Medicina General',R3:'Telexperticia MG→Internista',R4:'PRE-MI-01 al internista'};
-  rows=pacientes.filter(p=>p.estado==='Resuelto').map(p=>`<tr><td><b>${p.n}</b></td><td>${p.cita}</td><td>${p.canal}</td><td>${tagR(p.fin)}</td><td>${ent[p.fin]||'—'}</td><td>${p.sat?'⭐'+p.sat:'—'}</td></tr>`)}
+  rows=pacientes.filter(p=>p.estado==='Resuelto').map(p=>`<tr><td><b>${p.n}</b></td><td>${p.cita}</td><td>${p.canal}</td><td>${tagR(p.fin)}</td><td>${ent[p.fin]||'—'}</td><td>${p.sat?'⭐'+p.sat:'—'}</td><td><button class="btn-sm sec" onclick="abrirDetalle('${p.uid}')">💬 Ver interacción</button></td></tr>`)}
  tb.innerHTML=rows.join('');
 }
 function llamar(d){
@@ -199,6 +231,88 @@ function alertas(){
  if(!h)h='<div class="alert" style="border-color:var(--ok);background:#e8f7ef">✅ Sin alertas. Operación normal.</div>';
  el.innerHTML=h;
 }
+// ===== Detalle de interacción: transcripción exacta + contexto de la decisión =====
+const REGLAS={
+ R1:'Regla 2 — Necesidad administrativa o reformulación estable SIN síntomas nuevos → se resuelve por el circuito administrativo (PRE-RES-01) y se libera la cita de MI, previa conciliación médica.',
+ R2:'Regla 3/4 — Control de enfermedad crónica compensado sin síntomas nuevos, O primera vez con síntoma de baja sospecha: es competencia de MEDICINA GENERAL → se reencauza con objetivo específico escrito (PRE-MG-01), dejando criterio explícito de devolución a MI. La cita de MI se libera o se condiciona según el médico revisor.',
+ R3:'Regla 5 — Información incierta o inconsistente → teleinterconsulta MG→internista (telexperticia, Res. 2654/2019 art. 17) antes de decidir. No se toma ninguna decisión sin información suficiente.',
+ R4:'Regla 6 — Pertinencia de especialista confirmada (síntomas nuevos en crónico, descompensación, comorbilidades) → permanece con MEDICINA INTERNA y recibe resumen previo (PRE-MI-01).',
+ RX:'Regla 1 (máxima prioridad) — Bandera roja reportada → recomendación inmediata de urgencias + alerta al equipo humano. No continúa por el filtro.',
+ TEL:'Decisión del usuario — eligió el canal telefónico → cola de llamadas del dashboard; el agente aplica el guion PRE-TEL-01 con el mismo árbol.',
+ NOP:'Decisión del usuario — rechazó la preconsulta (libre escogencia, Res. 2654/2019 art. 4) → sin datos clínicos, cita intacta.'
+};
+function respPorRuta(p){
+ const b={snQ:'¿Ha tenido síntomas NUEVOS o empeoramiento en las últimas 2 semanas?',sn:'No',exa:'No tengo',meds:'Sí, todos los días'};
+ if(p.prop==='R1')return Object.assign({},b,{motivo:p.tipo==='Control'?'Renovar fórmula de mis medicamentos':'Un trámite (incapacidad, certificado, autorización)',objetivo:'Solo necesito la fórmula o el documento'});
+ if(p.prop==='R2')return p.tipo==='Primera vez'?Object.assign({},b,{motivo:'Síntoma nuevo que me preocupa',objetivo:'Que me expliquen qué tengo (diagnóstico)'}):Object.assign({},b,{motivo:'Control de mi enfermedad (hipertensión, diabetes…)',objetivo:'Revisar cómo va mi enfermedad y mi tratamiento'});
+ if(p.prop==='R3')return Object.assign({},b,{sn:'No estoy seguro(a)',motivo:'Síntoma nuevo que me preocupa',objetivo:'No estoy seguro(a)'});
+ if(p.prop==='R4')return Object.assign({},b,{sn:'Sí',exa:'Sí, tengo exámenes recientes',motivo:p.tipo==='Control'?'Control de mi enfermedad (hipertensión, diabetes…)':'Síntoma nuevo que me preocupa',objetivo:'Que me expliquen qué tengo (diagnóstico)'});
+ return Object.assign({},b,{motivo:'Otro motivo (texto libre)',objetivo:'No estoy seguro(a)'});
+}
+function transEjemplo(p){
+ if(p.prop==='RX')return [
+  ['b','👋 Soy un asistente virtual (inteligencia artificial) de [Prestador, NIT], responsable de la plataforma. Preparando su cita '+p.cita],
+  ['u','✅ Acepto y autorizo'],
+  ['b','¿Tiene AHORA MISMO: dolor fuerte de pecho, falta de aire, déficit neurológico, confusión, sangrado o fiebre alta?'],
+  ['u','Dolor fuerte de pecho o falta de aire'],
+  ['b','⚠️ Recomendación conservadora: acudir a urgencias de inmediato. Su cita queda protegida y un miembro del equipo lo contactará.']];
+ const r=respPorRuta(p);
+ return [
+  ['b','👋 Soy un asistente virtual (inteligencia artificial) de [Prestador, NIT], responsable de la plataforma. Voy a preparar su cita '+p.cita+'. No es una consulta médica. Sus respuestas son datos sensibles de salud (Ley 1581/2012) y podrán hacer parte de su historia clínica.'],
+  ['u','✅ Acepto y autorizo'],
+  ['b','Verificación de identidad: últimos 4 dígitos de su documento y fecha de nacimiento.'],
+  ['u',(p.d||'')+' - ••/••/••••'],
+  ['b','⚠️ Antes de continuar, descartar urgencia. ¿Tiene AHORA MISMO alguno de estos síntomas? (banderas rojas)'],
+  ['u','Ninguno de estos'],
+  ['b','¿Su cita es primera vez o control?'],
+  ['u',p.tipo],
+  ['b','¿Cuál es el motivo principal de su consulta?'],
+  ['u',r.motivo],
+  ['b','¿Qué espera lograr con esta cita? (objetivo específico)'],
+  ['u',r.objetivo],
+  ['b',r.snQ],
+  ['u',r.sn],
+  ['b','¿Tiene exámenes o resultados recientes (últimos 3 meses)?'],
+  ['u',r.exa],
+  ['b','¿Toma medicamentos de forma permanente?'],
+  ['u',r.meds],
+  ['b','✅ Resumen registrado. Un médico revisará sus respuestas y mañana le confirmará si su cita con el internista se mantiene o si primero lo verá un médico general con un objetivo claro para adelantar todo.']];
+}
+function esc(t){return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function entregaTexto(p){
+ return {R1:'PRE-RES-01 → circuito administrativo (trámite sin cita de especialista)',
+  R2:'PRE-MG-01 → entregable al médico general con objetivo específico escrito',
+  R3:'Telexperticia MG→internista, Res. 2654/2019 art. 17 (respuesta <24 h hábiles)',
+  R4:'PRE-MI-01 → resumen previo para el internista (cita confirmada)',
+  RX:'Alerta RX → supervisor de salud (escalamiento <15 min)',
+  TEL:'Guion PRE-TEL-01 → preconsulta telefónica por el agente supervisado',
+  NOP:'Sin participación — cita intacta (libre escogencia)'}[p.prop]||'—';
+}
+function contexto(p){
+ const r=respPorRuta(p);
+ let objMG='';
+ if(p.ses)objMG='Objetivo del paciente: '+(p.ses.objetivo||'—');
+ else objMG=p.tipo==='Primera vez'?'Diagnóstico inicial del síntoma + exámenes de preparación; si hay criterios, devolver con MI':'Control y reformulación integral; ordenar exámenes de preparación para MI si aplica';
+ const conc=p.fin?(p.fin==='R4'?'Decisión: MANTENER MI presencial (salvaguarda ante duda)':'Decisión: propuesta ACEPTADA → '+p.fin):'Pendiente de conciliación médica (el médico revisor decide)';
+ let h='';
+ h+='<div class="rule"><b>Regla aplicada del árbol (firmado por el internista):</b><br>'+esc(REGLAS[p.prop]||'—')+'</div>';
+ h+='<div class="kv2">Tipo de cita: '+esc(p.tipo)+'\nMotivo del paciente: '+esc((p.ses&&p.ses.motivo)||r.motivo)+'\nObjetivo declarado: '+esc((p.ses&&p.ses.objetivo)||r.objetivo)+'\nSíntomas nuevos/empeoramiento: '+esc((p.ses&&p.ses.sn)||r.sn)+'\nExámenes recientes: '+esc((p.ses&&p.ses.exa)||r.exa)+'\nMedicamentos permanentes: '+esc((p.ses&&p.ses.meds)||r.meds)+'\nBanderas rojas: '+(p.prop==='RX'?'SÍ — '+esc((p.ses&&p.ses.br&&p.ses.br[0])||'síntoma de alarma reportado'):'No')+'</div>';
+ if(p.prop==='R2')h+='<div class="rule"><b>¿Por qué se propone MEDICINA GENERAL y no el especialista?</b><br>'+esc(REGLAS.R2)+'<br><br><b>Objetivo específico entregado al MG (formato PRE-MG-01):</b> '+esc(objMG)+'<br><b>Criterio de devolución a MI:</b> [criterios del árbol firmado por el internista]<br><b>Opción del paciente:</b> puede responder MANTENER para conservar su cita con el especialista (libre escogencia, Res. 2654/2019 art. 4).</div>';
+ if(p.prop==='R4')h+='<div class="rule"><b>¿Por qué permanece con el internista?</b><br>'+esc(REGLAS.R4)+'</div>';
+ h+='<div class="kv2">Entregable: '+esc(entregaTexto(p))+'\nConciliación médica: '+esc(conc)+'\nFecha de la interacción: '+esc(p.ses?p.ses.fecha:'—')+' · Canal: '+esc(p.canal)+'\nEstado: '+esc(p.ses?p.ses.estado:(p.estado||'—'))+'</div>';
+ h+='<p style="font-size:.7rem;color:#5b6b7b;margin-top:8px">Sustento: Res. 2654/2019 arts. 5 (autonomía), 7 (consentimiento), 10 (resumen al usuario), 12.2 (divulgación de IA), 17 (telexperticia) · El sistema propone; la decisión clínica final siempre es humana.</p>';
+ return h;
+}
+function abrirDetalle(uid){
+ const p=pacientes.find(x=>x.uid===uid); if(!p)return;
+ document.getElementById('mTitle').textContent='Interacción y decisión — '+p.n+' · cita '+p.cita+' · propuesta '+p.prop+(p.ses?' (interacción real del demo)':' (caso de ejemplo del lote)');
+ const chat=(p.ses&&p.ses.trans&&p.ses.trans.length)?p.ses.trans:transEjemplo(p);
+ document.getElementById('mChat').innerHTML=chat.map(m=>'<div class="bub '+(m.w==='u'?'u':'b')+'">'+esc(m.t)+'</div>').join('')+'<p style="font-size:.7rem;color:#5b6b7b">Transcripción literal de la conversación con el asistente virtual.</p>';
+ document.getElementById('mCtx').innerHTML=contexto(p);
+ document.getElementById('modal').classList.add('show');
+}
+function cerrarDetalle(){document.getElementById('modal').classList.remove('show')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrarDetalle()});
 // Simulación en vivo
 const eventos=[
  ()=>{const p=pacientes.find(x=>x.estado==='Enviado');if(p){p.estado='En conversación';addFeed('💬 <b>'+p.n+'</b> abrió el mensaje y aceptó el consentimiento digital')}},
