@@ -188,9 +188,9 @@ function render(){
  if(vista==='llamadas'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Estado</th><th>Intentos</th><th>Acción (agente)</th>';
   rows=pacientes.filter(p=>['No responde','Pidió llamada'].includes(p.estado)).map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d}</small></td><td>${p.cita}</td><td>${tagE(p.estado)}</td><td>${p.intentos}</td><td><button class="btn-sm" onclick="llamar('${p.d}')">Registrar llamada</button></td></tr>`);
   if(!rows.length)rows=['<tr><td colspan="5">✅ Cola de llamadas vacía</td></tr>']}
- if(vista==='medica'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Propuesta del motor</th><th>Conciliación del médico revisor</th>';
-  rows=pacientes.filter(p=>p.estado==='Completa'&&!p.fin).map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d}</small></td><td>${p.cita}</td><td>${tagR(p.prop)}${p.br?' <span class="tag r-RX">Bandera roja — verificar llamada del supervisor</span>':''}</td><td><button class="btn-sm" onclick="conciliar('${p.d}',true)">Aceptar propuesta</button><button class="btn-sm sec" onclick="conciliar('${p.d}',false)">Mantener MI presencial</button></td></tr>`);
-  if(!rows.length)rows=['<tr><td colspan="4">✅ Bandeja de conciliación vacía</td></tr>']}
+ if(vista==='medica'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Propuesta</th><th>Criterio de la propuesta (por qué)</th><th>Verificación y decisión del médico</th>';
+  rows=pacientes.filter(p=>p.estado==='Completa'&&!p.fin).map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d} · ${p.canal}</small></td><td>${p.cita}</td><td>${tagR(p.prop)}${p.br?' <span class="tag r-RX">Bandera roja</span>':''}</td><td style="max-width:380px;white-space:normal"><b>${esc(CORTO[p.prop]||'—')}</b><br><small style="color:#5b6b7b">${esc(gatillo(p))}</small><br><button class="btn-sm" style="background:#00a19a" onclick="abrirDetalle('${p.uid}')">💬 Ver interacción y contexto completo</button></td><td><button class="btn-sm" onclick="conciliar('${p.d}',true)">✅ Aceptar propuesta</button><button class="btn-sm sec" onclick="conciliar('${p.d}',false)"> Mantener MI presencial</button></td></tr>`);
+  if(!rows.length)rows=['<tr><td colspan="5">✅ Bandeja de conciliación vacía</td></tr>']}
  if(vista==='resueltos'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Canal</th><th>Enrutamiento final</th><th>Entregable</th><th>Satisf.</th>';
   const ent={R1:'PRE-RES-01 (trámite)',R2:'PRE-MG-01 a Medicina General',R3:'Telexperticia MG→Internista',R4:'PRE-MI-01 al internista'};
   rows=pacientes.filter(p=>p.estado==='Resuelto').map(p=>`<tr><td><b>${p.n}</b></td><td>${p.cita}</td><td>${p.canal}</td><td>${tagR(p.fin)}</td><td>${ent[p.fin]||'—'}</td><td>${p.sat?'⭐'+p.sat:'—'}</td><td><button class="btn-sm sec" onclick="abrirDetalle('${p.uid}')">💬 Ver interacción</button></td></tr>`)}
@@ -241,6 +241,27 @@ const REGLAS={
  TEL:'Decisión del usuario — eligió el canal telefónico → cola de llamadas del dashboard; el agente aplica el guion PRE-TEL-01 con el mismo árbol.',
  NOP:'Decisión del usuario — rechazó la preconsulta (libre escogencia, Res. 2654/2019 art. 4) → sin datos clínicos, cita intacta.'
 };
+const CORTO={
+ R1:'Reformulación estable o trámite SIN síntomas nuevos → no requiere especialista (Regla 2).',
+ R2:'Crónico compensado sin síntomas nuevos, O primera vez de baja sospecha → competencia de MEDICINA GENERAL (Reglas 3/4).',
+ R3:'Respuestas inciertas o inconsistentes → telexperticia MG→MI antes de decidir (Regla 5).',
+ R4:'Pertinencia de especialista confirmada → permanece con MI (Regla 6).',
+ RX:'Bandera roja → urgencias + alerta humana (Regla 1).',
+ TEL:'Paciente eligió el canal telefónico → agente con guion PRE-TEL-01.',
+ NOP:'Rechazó la preconsulta → cita intacta.'
+};
+function gatillo(p){
+ const r=respPorRuta(p);
+ const motivo=(p.ses&&p.ses.motivo)||r.motivo;
+ const sn=(p.ses&&p.ses.sn)||r.sn;
+ const obj=(p.ses&&p.ses.objetivo)||r.objetivo;
+ if(p.prop==='R1')return 'Gatillo del paciente: "'+motivo+'" · objetivo: '+obj+' · síntomas nuevos: '+sn;
+ if(p.prop==='R2')return 'Gatillo del paciente: '+p.tipo+' · "'+motivo+'" · síntomas nuevos: '+sn+' · banderas rojas: No';
+ if(p.prop==='R3')return 'Gatillo del paciente: respuestas inciertas (síntomas nuevos: '+sn+'; objetivo: '+obj+')';
+ if(p.prop==='R4')return 'Gatillo del paciente: '+p.tipo+' · "'+motivo+'" · síntomas nuevos: '+sn;
+ if(p.prop==='RX')return 'Gatillo del paciente: bandera roja reportada';
+ return 'Gatillo: decisión del usuario sobre el canal de atención';
+}
 function respPorRuta(p){
  const b={snQ:'¿Ha tenido síntomas NUEVOS o empeoramiento en las últimas 2 semanas?',sn:'No',exa:'No tengo',meds:'Sí, todos los días'};
  if(p.prop==='R1')return Object.assign({},b,{motivo:p.tipo==='Control'?'Renovar fórmula de mis medicamentos':'Un trámite (incapacidad, certificado, autorización)',objetivo:'Solo necesito la fórmula o el documento'});
@@ -249,7 +270,22 @@ function respPorRuta(p){
  if(p.prop==='R4')return Object.assign({},b,{sn:'Sí',exa:'Sí, tengo exámenes recientes',motivo:p.tipo==='Control'?'Control de mi enfermedad (hipertensión, diabetes…)':'Síntoma nuevo que me preocupa',objetivo:'Que me expliquen qué tengo (diagnóstico)'});
  return Object.assign({},b,{motivo:'Otro motivo (texto libre)',objetivo:'No estoy seguro(a)'});
 }
+function transTelefono(p){
+ const r=respPorRuta(p);
+ return [
+  ['b','📞 REGISTRO DE LLAMADA — Guion PRE-TEL-01 (teleorientación humana supervisada · Res. 2654/2019 art. 6, parágrafo)\nAgente de preconsulta: [nombre] · Intento: '+(p.intentos||1)+' · Supervisión: [profesional de salud]'],
+  ['b','Agente: "Buenos días, llamo del servicio de Medicina Interna de Colsubsidio / [Prestador]. Soy [nombre], del equipo de apoyo. ¿Hablo con el titular de la cita?"\nVerificación: últimos 4 dígitos del documento + fecha de nacimiento.'],
+  ['u','Identidad verificada: '+(p.d||'')+' ••/••/••••'],
+  ['b','Agente: "La llamada es para preparar su cita del '+p.cita+'. No es una consulta médica y la información podrá hacer parte de su historia clínica. ¿Acepta continuar?"'],
+  ['u','Sí, acepto'],
+  ['b','Agente (banderas rojas): "¿Tiene AHORA dolor de pecho, falta de aire, déficit neurológico, confusión, sangrado abundante o fiebre alta?"'],
+  ['u','Ninguno'],
+  ['b','Agente (mismo árbol del guion): tipo de cita, motivo, objetivo específico, síntomas nuevos, exámenes, medicamentos.'],
+  ['u','Tipo: '+p.tipo+'\nMotivo: '+r.motivo+'\nObjetivo: '+r.objetivo+'\nSíntomas nuevos/empeoramiento: '+r.sn+'\nExámenes: '+r.exa+'\nMedicamentos: '+r.meds],
+  ['b','Agente: "Gracias. Un médico de nuestro equipo revisará sus respuestas y le confirmará su cita." Registro cargado en el dashboard → bandeja médica.']];
+}
 function transEjemplo(p){
+ if(p.canal==='Teléfono')return transTelefono(p);
  if(p.prop==='RX')return [
   ['b','👋 Soy un asistente virtual (inteligencia artificial) de [Prestador, NIT], responsable de la plataforma. Preparando su cita '+p.cita],
   ['u','✅ Acepto y autorizo'],
@@ -307,7 +343,7 @@ function abrirDetalle(uid){
  const p=pacientes.find(x=>x.uid===uid); if(!p)return;
  document.getElementById('mTitle').textContent='Interacción y decisión — '+p.n+' · cita '+p.cita+' · propuesta '+p.prop+(p.ses?' (interacción real del demo)':' (caso de ejemplo del lote)');
  const chat=(p.ses&&p.ses.trans&&p.ses.trans.length)?p.ses.trans:transEjemplo(p);
- document.getElementById('mChat').innerHTML=chat.map(m=>'<div class="bub '+(m.w==='u'?'u':'b')+'">'+esc(m.t)+'</div>').join('')+'<p style="font-size:.7rem;color:#5b6b7b">Transcripción literal de la conversación con el asistente virtual.</p>';
+ document.getElementById('mChat').innerHTML=chat.map(m=>{const w=Array.isArray(m)?m[0]:m.w;const t=Array.isArray(m)?m[1]:m.t;return '<div class="bub '+(w==='u'?'u':'b')+'">'+esc(t)+'</div>'}).join('')+'<p style="font-size:.7rem;color:#5b6b7b">'+(p.canal==='Teléfono'?'Registro literal de la llamada telefónica (guion PRE-TEL-01).':'Transcripción literal de la conversación con el asistente virtual.')+'</p>';
  document.getElementById('mCtx').innerHTML=contexto(p);
  document.getElementById('modal').classList.add('show');
 }
