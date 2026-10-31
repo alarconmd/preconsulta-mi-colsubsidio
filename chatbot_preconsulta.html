@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo — Preconsulta Inteligente Medicina Interna | Colsubsidio</title>
+<style>
+:root{--azul:#00509e;--azul2:#0b6bcb;--teal:#00a19a;--bg:#eef3f8;--gris:#5b6b7b;--ok:#1e8e5a;--warn:#c77700;--red:#c0392b;--card:#fff}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+body{background:var(--bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px}
+header{max-width:960px;width:100%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+h1{font-size:1.15rem;color:var(--azul)}
+.badge-demo{background:var(--warn);color:#fff;padding:3px 10px;border-radius:12px;font-size:.75rem;font-weight:700}
+main{display:flex;gap:14px;max-width:960px;width:100%;align-items:flex-start;flex-wrap:wrap}
+.phone{background:#075e54;border-radius:18px;padding:10px;width:400px;max-width:100%;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.phone .topbar{color:#fff;padding:6px 8px 10px;font-size:.85rem;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.2)}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+.topbar small{opacity:.75;display:block;font-size:.68rem}
+.chat{background:#e5ddd5;border-radius:0 0 12px 12px;min-height:420px;max-height:62vh;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:85%;padding:9px 12px;border-radius:10px;font-size:.86rem;line-height:1.35;white-space:pre-wrap;box-shadow:0 1px 1px rgba(0,0,0,.12)}
+.msg.bot{background:#fff;align-self:flex-start;border-top-left-radius:2px}
+.msg.user{background:#d9fdd3;align-self:flex-end;border-top-right-radius:2px}
+.norma{font-size:.66rem;color:var(--gris);align-self:flex-start;background:rgba(255,255,255,.65);padding:2px 8px;border-radius:8px;border:1px dashed #b9c6d3}
+.opts{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;max-width:95%}
+.opt{background:var(--azul2);color:#fff;border:none;padding:8px 12px;border-radius:16px;font-size:.8rem;cursor:pointer;transition:.15s}
+.opt:hover{background:var(--azul);transform:translateY(-1px)}
+.opt.alt{background:#fff;color:var(--azul2);border:1px solid var(--azul2)}
+.opt.danger{background:var(--red)}
+.inputrow{display:flex;gap:6px;margin-top:6px}
+.chat input{flex:1;border:none;border-radius:16px;padding:9px 12px;font-size:.86rem;outline:none}
+.send{background:var(--teal);color:#fff;border:none;border-radius:50%;width:38px;height:36px;cursor:pointer;font-size:1rem}
+.panel{background:var(--card);border-radius:14px;flex:1;min-width:340px;padding:16px;box-shadow:0 3px 14px rgba(0,0,0,.08)}
+.panel h2{font-size:.95rem;color:var(--azul);margin-bottom:8px}
+.panel h3{font-size:.82rem;color:var(--teal);margin:12px 0 4px;text-transform:uppercase;letter-spacing:.4px}
+.panel p,.panel li{font-size:.83rem;color:#33414f;line-height:1.45}
+.kv{font-size:.8rem;background:#f2f7fc;border-left:3px solid var(--azul2);padding:8px 10px;border-radius:6px;margin:6px 0;white-space:pre-wrap}
+.btn{display:inline-block;background:var(--teal);color:#fff;border:none;padding:9px 16px;border-radius:10px;font-size:.85rem;cursor:pointer;text-decoration:none;margin-top:8px}
+.btn.sec{background:#fff;color:var(--azul);border:1px solid var(--azul)}
+.typing{align-self:flex-start;color:#8aa;font-size:.75rem;font-style:italic}
+footer{max-width:960px;width:100%;margin-top:14px;font-size:.72rem;color:var(--gris);text-align:center;line-height:1.5}
+.stars{display:flex;gap:6px;font-size:1.4rem}
+.stars span{cursor:pointer;opacity:.4}.stars span.on{opacity:1}
+@media(max-width:900px){main{flex-direction:column}.phone{width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🩺 Preconsulta Inteligente — Medicina Interna · Colsubsidio</h1>
+  <small style="color:var(--gris)">Demo funcional de la experiencia del paciente (teleorientación con IA · Res. 2654/2019 arts. 9–12)</small></div>
+  <span class="badge-demo">DEMO — SIN DATOS REALES</span>
+</header>
+<main>
+  <div class="phone">
+    <div class="topbar"><div class="avatar">MI</div><div><b>Asistente Medicina Interna</b><small>en línea · Colsubsidio / [Prestador]</small></div></div>
+    <div class="chat" id="chat"></div>
+  </div>
+  <div class="panel" id="panel">
+    <h2>Panel operativo (lo que ve el equipo)</h2>
+    <p>Este panel muestra <b>en tiempo real</b> lo que el sistema genera mientras el paciente responde: el estado en el dashboard, el enrutamiento propuesto por el motor de reglas y los entregables para el médico general y el internista.</p>
+    <h3>Estado del episodio</h3>
+    <div class="kv" id="estado">Esperando inicio de la preconsulta…</div>
+    <h3>Entregable generado</h3>
+    <div class="kv" id="entregable">—</div>
+    <h3>Acciones operativas</h3>
+    <p id="acciones">—</p>
+    <a class="btn sec" href="dashboard_director.html" target="_blank">📊 Abrir demo del Dashboard del Director</a>
+  </div>
+</main>
+<footer>
+Demo educativa. Flujo amparado en: Res. 2654/2019 (teleorientación, arts. 7–12), Ley 1581/2012 (datos sensibles), Ley 527/1999 (mensaje de datos), Res. 3100/2019 (seguridad del paciente), Res. 1315/2026 (humanización). El motor de reglas es un árbol de decisión validado por el internista; la decisión clínica final siempre es humana.
+</footer>
+<script>
+const chat=document.getElementById('chat'),estado=document.getElementById('estado'),entregable=document.getElementById('entregable'),acciones=document.getElementById('acciones');
+const S={br:[],motivo:'',tipo:'',objetivo:'',sn:'',meds:'',exa:'',ruta:null,sat:0};
+function scrollDown(){chat.scrollTop=chat.scrollHeight}
+function botMsg(t,norma,cb){const ty=document.createElement('div');ty.className='typing';ty.textContent='escribiendo…';chat.appendChild(ty);scrollDown();setTimeout(()=>{ty.remove();const d=document.createElement('div');d.className='msg bot';d.textContent=t;chat.appendChild(d);if(norma){const n=document.createElement('div');n.className='norma';n.textContent='⚖️ '+norma;chat.appendChild(n)}scrollDown();if(cb)cb()},450)}
+function userMsg(t){const d=document.createElement('div');d.className='msg user';d.textContent=t;chat.appendChild(d);scrollDown()}
+function options(list){const c=document.createElement('div');c.className='opts';list.forEach(o=>{const b=document.createElement('button');b.className='opt'+(o.cls?' '+o.cls:'');b.textContent=o.t;b.onclick=()=>{c.remove();userMsg(o.t);o.fn()};c.appendChild(b)});chat.appendChild(c);scrollDown()}
+function textInput(ph,cb){const r=document.createElement('div');r.className='inputrow';const i=document.createElement('input');i.placeholder=ph;const s=document.createElement('button');s.className='send';s.textContent='➤';const go=()=>{if(!i.value.trim())return;const v=i.value.trim();r.remove();userMsg(v);cb(v)};s.onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()};r.appendChild(i);r.appendChild(s);chat.appendChild(r);i.focus();scrollDown()}
+function setEstado(t){estado.textContent=t}
+function inicio(){
+ setEstado('📋 Cita MI programada (demo) → contacto iniciado T-96h por WhatsApp');
+ botMsg('👋 ¡Hola! Le damos la bienvenida al servicio de Medicina Interna de Colsubsidio.\n\nSoy un asistente virtual (inteligencia artificial) de [Prestador IPS, NIT], responsable de esta plataforma. Voy a preparar su cita del jueves 05 de noviembre, 8:40 a.m.','Res. 2654/2019 art. 12.2: la teleorientación con IA debe informarse al usuario indicando el responsable.',()=>{
+ botMsg('Antes de empezar, necesito su autorización:\n\n• Esto NO es una consulta médica ni da diagnósticos; es una entrevista de preparación de ~5 minutos.\n• Sus respuestas son datos sensibles de salud (Ley 1581/2012) y podrán hacer parte de su historia clínica.\n• Puede pedir copia de este resumen, o hablar con una persona por teléfono.\n• Si no participa, su cita se mantiene igual.\n\nAviso de privacidad: [link]','Res. 2654/2019 arts. 7, 9 par., 10, 12.1 · Ley 1581/2012 arts. 5-6, 12 · Ley 527/1999',()=>{
+ options([
+  {t:'✅ Acepto y autorizo',fn:()=>{setEstado('✅ Consentimiento digital registrado (fecha, hora, dispositivo, versión del texto v1.0)');identidad()}},
+  {t:'📞 Prefiero que me llamen',cls:'alt',fn:canalTelefono},
+  {t:'❌ No deseo participar',cls:'alt',fn:noParticipa}
+ ])})})}
+function identidad(){
+ botMsg('Para proteger su información, escriba en un solo mensaje: los últimos 4 dígitos de su documento y su fecha de nacimiento.\nEjemplo: 4821 - 15/03/1968','Res. 2654/2019 art. 12.3: identificación del usuario (política de seguridad del paciente).',()=>{
+ textInput('Ej: 4821 - 15/03/1968',v=>{
+  setEstado('🔐 Identidad verificada contra la cita programada (en producción: validación real / OTP)');
+  botMsg('¡Gracias! Identidad confirmada. 😊','',banderasRojas)})})}
+function banderasRojas(){
+ botMsg('Antes de continuar, es importante descartar una urgencia.\n\n¿Tiene AHORA MISMO alguno de estos síntomas?','Res. 2654/2019 art. 27: seguridad del paciente. Diseño conservador (NHS 111; Gilbert 2020, BMJ Open).',()=>{
+ options([
+  {t:'Dolor fuerte de pecho o falta de aire',cls:'danger',fn:()=>roja('dolor torácico / disnea')},
+  {t:'Debilidad de mitad del cuerpo o cara / habla',cls:'danger',fn:()=>roja('déficit neurológico')},
+  {t:'Confusión, desmayo o convulsiones',cls:'danger',fn:()=>roja('alteración de conciencia')},
+  {t:'Sangrado abundante o vómito con sangre',cls:'danger',fn:()=>roja('sangrado')},
+  {t:'Fiebre alta que no baja',cls:'danger',fn:()=>roja('fiebre persistente')},
+  {t:'Ninguno de estos',fn:()=>{S.br=[];tipoConsulta()}}
+ ])})}
+function roja(br){
+ S.br=[br];S.ruta='RX';
+ setEstado('🚨 BANDERA ROJA: '+br+' → alerta inmediata al supervisor de salud + nota en dashboard');
+ entregable.textContent='ALERTA RX → bandeja del supervisor de salud. Paciente: cita MI 05-nov 8:40 a.m. Bandera: "'+br+'". Acción: llamada del equipo en <15 min.';
+ acciones.innerHTML='<span class="tag t-rx">RX · URGENCIAS</span> Supervisor notificado · Cita protegida para reprogramación';
+ botMsg('⚠️ Por su seguridad, le recomendamos acudir AHORA a urgencias o llamar a la línea de urgencias de Colsubsidio [número].\n\nSu cita queda protegida y la reprogramaremos. Un miembro del equipo de salud lo contactará en los próximos minutos.','Recomendación conservadora; la decisión final es del equipo humano (Ley 1751/2015 art. 17).',()=>{
+ options([{t:'🔄 Simular otro paciente',fn:reiniciar}])})}
+function canalTelefono(){
+ setEstado('📞 Paciente pidió llamada → COLA DE LLAMADAS del dashboard (insumo del agente administrativo)');
+ entregable.textContent='Registro: "prefiere llamada". El agente ejecutará el guion PRE-TEL-01 (mismo árbol), supervisado por personal de salud (Res. 2654/2019 art. 6, parágrafo).';
+ acciones.innerHTML='Dashboard → cola de llamadas: +1 pendiente · Responsable: agente de preconsulta telefónica';
+ botMsg('¡Perfecto! Un miembro de nuestro equipo lo llamará al número registrado dentro de las próximas 24 horas hábiles. Su cita del 05 de noviembre se mantiene sin cambios. 😊','Res. 2654/2019 arts. 9-10 (teleorientación humana); art. 4 (libre escogencia).',()=>{
+ options([{t:'🔄 Simular otro paciente',fn:reiniciar}])})}
+function noParticipa(){
+ setEstado('❌ Paciente no acepta preconsulta → cita MI intacta (libre escogencia). Dashboard registra "no participa".');
+ entregable.textContent='Sin datos clínicos recolectados (no hubo autorización). La cita sigue el flujo tradicional.';
+ acciones.innerHTML='Ninguna acción. Cita intacta.';
+ botMsg('Entendido, sin problema. Su cita del jueves 05 de noviembre a las 8:40 a.m. se mantiene exactamente igual. Lo esperamos. 😊','Res. 2654/2019 art. 4: libre escogencia.',()=>{
+ options([{t:'🔄 Simular otro paciente',fn:reiniciar}])})}
+function tipoConsulta(){
+ botMsg('¿Su cita del 05 de noviembre es…','',()=>{
+ options([
+  {t:'🆕 Primera vez con el internista',fn:()=>{S.tipo='Primera vez';motivo()}},
+  {t:'🔁 Control (ya me ha visto el internista)',fn:()=>{S.tipo='Control';motivo()}}
+ ])})}
+function motivo(){
+ botMsg('¿Cuál es el motivo principal de su consulta? Puede elegir una opción o escribirlo con sus palabras:','Res. 2654/2019 art. 10: teleorientación — estructuración de la necesidad.',()=>{
+ options([
+  {t:'Control de mi enfermedad (hipertensión, diabetes…)',fn:()=>{S.motivo='Control de enfermedad crónica';objetivo()}},
+  {t:'Síntoma nuevo que me preocupa',fn:()=>{S.motivo='Síntoma nuevo';objetivo()}},
+  {t:'Renovar fórmula de mis medicamentos',fn:()=>{S.motivo='Reformulación de medicamentos';objetivo()}},
+  {t:'Un trámite (incapacidad, certificado, autorización)',fn:()=>{S.motivo='Trámite administrativo';objetivo()}},
+  {t:'Traer resultados de exámenes',fn:()=>{S.motivo='Revisión de resultados';objetivo()}},
+  {t:'✍️ Escribir otro motivo',cls:'alt',fn:()=>textInput('Escriba el motivo de su consulta…',v=>{S.motivo=v;objetivo()})}
+ ])})}
+function objetivo(){
+ botMsg('¿Qué espera lograr con esta cita?','El objetivo específico alimenta el entregable del médico (PRE-MG-01 / PRE-MI-01, doc. 05).',()=>{
+ options([
+  {t:'Que me expliquen qué tengo (diagnóstico)',fn:()=>{S.objetivo='Diagnóstico';condicionales()}},
+  {t:'Revisar cómo va mi enfermedad y tratamiento',fn:()=>{S.objetivo='Control / reformulación';condicionales()}},
+  {t:'Solo necesito la fórmula o el documento',fn:()=>{S.objetivo='Trámite / reformulación simple';condicionales()}},
+  {t:'No estoy seguro(a)',fn:()=>{S.objetivo='No definido';condicionales()}}
+ ])})}
+function condicionales(){
+ const p1=S.motivo==='Control de enfermedad crónica'?'En las últimas 2 semanas, ¿ha tenido síntomas NUEVOS o empeoramiento de su enfermedad?':'¿Este motivo lleva más de 3 meses, o tiene varias enfermedades al tiempo?';
+ botMsg(p1,'',()=>{
+ options([
+  {t:'Sí',fn:()=>{S.sn='si';pregunta2()}},
+  {t:'No',fn:()=>{S.sn='no';pregunta2()}},
+  {t:'No estoy seguro(a)',cls:'alt',fn:()=>{S.sn='duda';pregunta2()}}
+ ])})}
+function pregunta2(){
+ botMsg('¿Tiene exámenes o resultados recientes (últimos 3 meses) que pueda llevar o compartir?','',()=>{
+ options([
+  {t:'Sí, tengo exámenes recientes',fn:()=>{S.exa='sí';pregunta3()}},
+  {t:'No tengo',fn:()=>{S.exa='no';pregunta3()}}
+ ])})}
+function pregunta3(){
+ botMsg('Por último: ¿toma medicamentos de forma permanente?','',()=>{
+ options([
+  {t:'Sí, todos los días',fn:()=>{S.meds='sí';resolver()}},
+  {t:'No tomo medicamentos permanentes',fn:()=>{S.meds='no';resolver()}}
+ ])})}
+function resolver(){
+ // MOTOR DE REGLAS (demo del árbol firmado por el internista)
+ let ruta,razon,tagCls;
+ if(S.motivo==='Trámite administrativo'||(S.motivo==='Reformulación de medicamentos'&&S.sn==='no')){ruta='R1';razon='Necesidad administrativa / reformulación estable sin síntomas nuevos → circuito administrativo';tagCls='t-r1'}
+ else if(S.sn==='duda'||S.objetivo==='No definido'){ruta='R3';razon='Información incierta → teleinterconsulta MG→internista (telexperticia) antes de decidir';tagCls='t-r3'}
+ else if(S.motivo==='Control de enfermedad crónica'&&S.sn==='no'&&S.tipo==='Control'){ruta='R2';razon='Control de crónico compensado, competencia de MG → reencauzar con objetivo específico';tagCls='t-r2'}
+ else if(S.motivo==='Síntoma nuevo'&&S.sn==='no'&&S.tipo==='Primera vez'){ruta='R2';razon='Primera vez, baja sospecha → MG primero: diagnóstico inicial + exámenes de preparación';tagCls='t-r2'}
+ else {ruta='R4';razon='Pertinencia de especialista confirmada → se mantiene MI con resumen previo';tagCls='t-r4'}
+ S.ruta=ruta;
+ setEstado('🧭 Motor de reglas → propuesta '+ruta+': '+razon+'\n⏳ Pasa a la BANDEJA DE CONCILIACIÓN del médico (revisión humana diaria).');
+ const nombres={R1:'Resolución administrativa',R2:'Reencauzar a Medicina General',R3:'Teleinterconsulta MG→Internista',R4:'Permanece con Internista'};
+ let ent='';
+ if(ruta==='R1')ent='PRE-RES-01 → Circuito administrativo\nTrámite: '+S.motivo+' · Compromiso: solución en 5 días hábiles\nCita MI: liberada (previa conciliación médica)';
+ if(ruta==='R2')ent='PRE-MG-01 → Entregable al MÉDICO GENERAL\nMotivo: '+S.motivo+' ('+S.tipo+')\nObjetivo: '+(S.objetivo==='No definido'?'definir necesidad en consulta MG':S.objetivo)+(S.exa==='no'?'\n+ Ordenar exámenes básicos de preparación para MI':'')+'\nCriterio de retorno a MI: [árbol firmado] · Cita MI: liberada o condicionada';
+ if(ruta==='R3')ent='TELEXPERTICIA (Res. 2654/2019 art. 17)\nCaso estructurado al internista (respuesta <24 h hábiles). El MG decide la conducta; el internista responde por su opinión.';
+ if(ruta==='R4')ent='PRE-MI-01 → Resumen previo para el INTERNISTA\nMotivo real: '+S.motivo+' · Objetivo: '+S.objetivo+'\nSíntomas nuevos: '+S.sn+' · Exámenes: '+S.exa+' · Medicamentos: '+S.meds+'\nCita MI: CONFIRMADA 05-nov 8:40 a.m.';
+ entregable.textContent=ent;
+ acciones.innerHTML='<span class="tag '+tagCls+'">'+ruta+' · '+nombres[ruta]+'</span><br><br>Dashboard: "Entrevista completa — pendiente conciliación médica" · Consentimiento y resumen anexables a la HC';
+ botMsg('¡Listo! Este es el resumen de lo que me contó:\n\n• Motivo: '+S.motivo+' ('+S.tipo+')\n• Objetivo: '+S.objetivo+'\n• Síntomas nuevos o empeoramiento: '+S.sn+'\n• Exámenes recientes: '+S.exa+'\n• Medicamentos permanentes: '+S.meds+'\n\nUn médico revisará sus respuestas y a más tardar mañana le confirmaremos: si su cita con el internista se mantiene, o si primero lo verá un médico general con un objetivo claro para adelantar todo.','Res. 2654/2019 art. 10: resumen al usuario. La cita NO se cancela automáticamente: decide el médico revisor.',()=>satisfaccion())}
+function satisfaccion(){
+ botMsg('Antes de terminar: del 1 al 5, ¿qué tan útil le pareció esta preparación? (5 = muy útil)','Indicador IR-8 (satisfacción / PREM) · Res. 1315/2026 (humanización).',()=>{
+ const c=document.createElement('div');c.className='stars';
+ for(let i=1;i<=5;i++){const sp=document.createElement('span');sp.textContent='⭐';sp.onclick=()=>{for(let j=0;j<5;j++)c.children[j].classList.toggle('on',j<i);setTimeout(()=>{c.remove();userMsg('⭐'.repeat(i));S.sat=i;cierre()},350)};c.appendChild(sp)}
+ chat.appendChild(c);scrollDown()})}
+function cierre(){
+ setEstado(estado.textContent+'\n⭐ Satisfacción registrada: '+S.sat+'/5 → dashboard');
+ botMsg('¡Muchas gracias! Sus respuestas ya están con el equipo médico. Si presenta dolor de pecho, falta de aire u otro síntoma de alarma, acuda de inmediato a urgencias.\n\nNos vemos pronto. 💙','',()=>{
+ options([{t:'🔄 Simular otro paciente',fn:reiniciar},{t:'📊 Ver dashboard del director',cls:'alt',fn:()=>window.open('dashboard_director.html','_blank')}])})}
+function reiniciar(){chat.innerHTML='';S.br=[];S.motivo='';S.tipo='';S.objetivo='';S.sn='';S.meds='';S.exa='';S.ruta=null;S.sat=0;entregable.textContent='—';acciones.textContent='—';inicio()}
+inicio();
+</script>
+</body>
+</html>

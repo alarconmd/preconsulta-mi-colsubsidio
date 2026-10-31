@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard en tiempo real — Preconsulta MI | Colsubsidio</title>
+<style>
+:root{--azul:#00509e;--azul2:#0b6bcb;--teal:#00a19a;--bg:#eef3f8;--gris:#5b6b7b;--ok:#1e8e5a;--warn:#c77700;--red:#c0392b}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+body{background:var(--bg);padding:16px;color:#22303c}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+h1{font-size:1.2rem;color:var(--azul)}
+.live{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--gris)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--ok);animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(30,142,90,.5)}70%{box-shadow:0 0 0 9px rgba(30,142,90,0)}100%{box-shadow:0 0 0 0 rgba(30,142,90,0)}}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.kpi .n{font-size:1.6rem;font-weight:700;color:var(--azul)}
+.kpi .l{font-size:.7rem;color:var(--gris);text-transform:uppercase;letter-spacing:.4px}
+.kpi.warn .n{color:var(--warn)} .kpi.red .n{color:var(--red)} .kpi.ok .n{color:var(--ok)}
+.grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:14px}
+.card h2{font-size:.95rem;color:var(--azul);margin-bottom:10px}
+.funnel div{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:.8rem}
+.funnel .bar{height:20px;border-radius:5px;background:linear-gradient(90deg,var(--azul2),var(--teal));min-width:30px;transition:width .6s;color:#fff;font-size:.7rem;display:flex;align-items:center;padding-left:6px}
+.funnel .lbl{width:210px;font-size:.78rem;color:var(--gris)}
+table{width:100%;border-collapse:collapse;font-size:.76rem}
+th{background:#f2f7fc;color:var(--azul);text-align:left;padding:7px 8px;position:sticky;top:0}
+td{padding:7px 8px;border-bottom:1px solid #edf2f7}
+tr:hover td{background:#f7fafd}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:700;color:#fff}
+.e-enviado{background:#9db2c4}.e-conv{background:var(--azul2)}.e-completa{background:var(--teal)}.e-noresp{background:var(--warn)}.e-llamada{background:#7c5cbf}.e-resuelto{background:var(--ok)}
+.r-R1{background:#7c5cbf}.r-R2{background:var(--ok)}.r-R3{background:var(--warn)}.r-R4{background:var(--azul)}.r-RX{background:var(--red)}.r-NA{background:#c3ccd6}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tab{border:1px solid var(--azul2);background:#fff;color:var(--azul2);padding:6px 12px;border-radius:16px;font-size:.78rem;cursor:pointer}
+.tab.on{background:var(--azul2);color:#fff}
+.alert{background:#fff4e5;border-left:4px solid var(--warn);border-radius:8px;padding:8px 10px;font-size:.78rem;margin-bottom:8px}
+.alert.red{background:#fdecea;border-color:var(--red)}
+.btn-sm{border:none;background:var(--ok);color:#fff;border-radius:8px;padding:4px 8px;font-size:.68rem;cursor:pointer;margin-right:4px}
+.btn-sm.sec{background:var(--azul)}
+.feed{font-size:.78rem;max-height:180px;overflow-y:auto}
+.feed div{padding:5px 8px;border-bottom:1px solid #eef2f6}
+.feed time{color:var(--gris);font-size:.68rem;margin-right:6px}
+footer{margin-top:10px;font-size:.7rem;color:var(--gris);text-align:center}
+.scroll{max-height:340px;overflow-y:auto}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>📊 Dashboard — Preconsulta Inteligente Medicina Interna</h1>
+  <small style="color:var(--gris)">Director del centro · Interventoría (solo lectura) · Datos de demostración simulados</small></div>
+  <div class="live"><span class="dot"></span> EN VIVO · <span id="reloj"></span></div>
+</header>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2>Episodios de preconsulta</h2>
+      <div class="tabs">
+        <button class="tab on" data-v="todos">Todos</button>
+        <button class="tab" data-v="llamadas">📞 Cola de llamadas</button>
+        <button class="tab" data-v="medica">🩺 Bandeja médica (conciliación)</button>
+        <button class="tab" data-v="resueltos">✅ Resueltos / enrutados</button>
+      </div>
+      <div class="scroll"><table id="tabla"><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
+    </div>
+    <div class="card">
+      <h2>Embudo del episodio previo (semana en curso)</h2>
+      <div class="funnel" id="funnel"></div>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <h2>⚠️ Alertas operativas</h2>
+      <div id="alertas"></div>
+    </div>
+    <div class="card">
+      <h2>Actividad en tiempo real</h2>
+      <div class="feed" id="feed"></div>
+    </div>
+    <div class="card">
+      <h2>Indicadores de resolutividad (metas piloto)</h2>
+      <table>
+        <tr><td>IR-1 Resueltos/reencauzados (R1+R2+R3)</td><td><b id="ir1"></b> <small>(meta ≥25%)</small></td></tr>
+        <tr><td>IR-3 Respuesta digital</td><td><b id="ir3"></b> <small>(meta ≥55%)</small></td></tr>
+        <tr><td>IR-4 No respondedores contactados por teléfono</td><td><b id="ir4"></b> <small>(meta ≥70%)</small></td></tr>
+        <tr><td>IR-7 Eventos de seguridad</td><td><b style="color:var(--ok)">0</b> <small>(meta 0)</small></td></tr>
+        <tr><td>IR-8 Satisfacción promedio</td><td><b id="ir8"></b> <small>(meta ≥4,0/5)</small></td></tr>
+        <tr><td>IR-10 Concordancia regla–médico</td><td><b id="ir10"></b> <small>(meta ≥85%)</small></td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+<footer>Demo funcional con datos simulados. Rol interventora: misma vista en modo solo lectura. Trazabilidad completa de consentimientos, decisiones médicas y llamadas (Res. 2654/2019; Ley 1581/2012). <a href="chatbot_preconsulta.html">← Volver al demo del chatbot</a></footer>
+<script>
+const pacientes=[
+ {n:'María F. Rojas',d:'****4821',tipo:'Control',cita:'05-nov 8:40',canal:'Bot',estado:'Resuelto',intentos:0,prop:'R2',fin:'R2',sat:5},
+ {n:'José A. Martínez',d:'****9034',tipo:'Primera vez',cita:'05-nov 9:00',canal:'Bot',estado:'Completa',intentos:0,prop:'R4',fin:'',sat:4},
+ {n:'Carmen E. Lozano',d:'****2210',tipo:'Control',cita:'05-nov 9:20',canal:'Bot',estado:'Resuelto',intentos:0,prop:'R1',fin:'R1',sat:5},
+ {n:'Luis H. Peña',d:'****7781',tipo:'Primera vez',cita:'05-nov 9:40',canal:'Bot',estado:'Completa',intentos:0,prop:'R2',fin:'',sat:0},
+ {n:'Rosa M. Cárdenas',d:'****3302',tipo:'Control',cita:'05-nov 10:00',canal:'Bot',estado:'No responde',intentos:0,prop:'',fin:'',sat:0},
+ {n:'Álvaro J. Soto',d:'****5518',tipo:'Control',cita:'05-nov 10:20',canal:'Bot',estado:'Pidió llamada',intentos:1,prop:'',fin:'',sat:0},
+ {n:'Lucía G. Parra',d:'****6645',tipo:'Primera vez',cita:'05-nov 10:40',canal:'Bot',estado:'Resuelto',intentos:0,prop:'R3',fin:'R3',sat:4},
+ {n:'Héctor O. Rincón',d:'****1190',tipo:'Control',cita:'05-nov 11:00',canal:'Teléfono',estado:'Resuelto',intentos:2,prop:'R2',fin:'R2',sat:5},
+ {n:'Diana C. Mora',d:'****8823',tipo:'Primera vez',cita:'05-nov 11:20',canal:'Bot',estado:'En conversación',intentos:0,prop:'',fin:'',sat:0},
+ {n:'Fernando T. Ruíz',d:'****4477',tipo:'Control',cita:'05-nov 11:40',canal:'Bot',estado:'Resuelto',intentos:0,prop:'R4',fin:'R4',sat:4},
+ {n:'Olga I. Vargas',d:'****2908',tipo:'Control',cita:'06-nov 8:00',canal:'Bot',estado:'No responde',intentos:1,prop:'',fin:'',sat:0},
+ {n:'Raúl E. Cifuentes',d:'****7156',tipo:'Primera vez',cita:'06-nov 8:20',canal:'Bot',estado:'Completa',intentos:0,prop:'RX',fin:'',sat:0,br:true},
+ {n:'Patricia N. Gaitán',d:'****5530',tipo:'Control',cita:'06-nov 8:40',canal:'Teléfono',estado:'Resuelto',intentos:1,prop:'R1',fin:'R1',sat:4},
+ {n:'Jorge L. Niño',d:'****8012',tipo:'Control',cita:'06-nov 9:00',canal:'Bot',estado:'Enviado',intentos:0,prop:'',fin:'',sat:0}
+];
+const programadas=48;
+let acept=0,rech=0;
+const feedEl=document.getElementById('feed');
+function hora(){return new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}
+function addFeed(t){const d=document.createElement('div');d.innerHTML='<time>'+hora()+'</time>'+t;feedEl.prepend(d)}
+function tagE(e){const m={'Enviado':'e-enviado','En conversación':'e-conv','Completa':'e-completa','No responde':'e-noresp','Pidió llamada':'e-llamada','Resuelto':'e-resuelto'};return '<span class="tag '+m[e]+'">'+e+'</span>'}
+function tagR(r){return r?'<span class="tag r-'+r+'">'+r+'</span>':'<span class="tag r-NA">—</span>'}
+let vista='todos';
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');vista=b.dataset.v;render()});
+function kpis(){
+ const contactados=pacientes.filter(p=>p.estado!=='Enviado').length;
+ const completas=pacientes.filter(p=>['Completa','Resuelto'].includes(p.estado)).length;
+ const resueltos=pacientes.filter(p=>p.estado==='Resuelto').length;
+ const rr=pacientes.filter(p=>p.estado==='Resuelto'&&['R1','R2','R3'].includes(p.fin)).length;
+ const r4=pacientes.filter(p=>p.fin==='R4').length;
+ const pendTel=pacientes.filter(p=>['No responde','Pidió llamada'].includes(p.estado)).length;
+ const satArr=pacientes.filter(p=>p.sat>0).map(p=>p.sat);
+ const sat=satArr.length?(satArr.reduce((a,b)=>a+b,0)/satArr.length).toFixed(1):'—';
+ const enviados=pacientes.length;
+ document.getElementById('kpis').innerHTML=
+ `<div class="kpi"><div class="n">${programadas}</div><div class="l">Citas MI programadas</div></div>
+  <div class="kpi"><div class="n">${enviados}</div><div class="l">Contactados (lote actual)</div></div>
+  <div class="kpi"><div class="n">${Math.round(contactados/enviados*100)}%</div><div class="l">Respondieron contacto</div></div>
+  <div class="kpi ok"><div class="n">${completas}</div><div class="l">Preconsultas completas</div></div>
+  <div class="kpi ok"><div class="n">${rr}</div><div class="l">Resueltos / reencauzados (R1-R3)</div></div>
+  <div class="kpi"><div class="n">${r4}</div><div class="l">Permanecen con internista (R4)</div></div>
+  <div class="kpi warn"><div class="n">${pendTel}</div><div class="l">Pendientes de llamada</div></div>
+  <div class="kpi red"><div class="n">${pacientes.filter(p=>p.br).length}</div><div class="l">Banderas rojas</div></div>`;
+ document.getElementById('ir1').textContent=completas?Math.round(rr/completas*100)+'%':'—';
+ document.getElementById('ir3').textContent=Math.round(contactados/enviados*100)+'%';
+ const noResp=pacientes.filter(p=>['No responde','Pidió llamada'].includes(p.estado));
+ const contTel=noResp.filter(p=>p.intentos>0).length;
+ document.getElementById('ir4').textContent=noResp.length?Math.round(contTel/noResp.length*100)+'%':'—';
+ document.getElementById('ir8').textContent=sat+(sat!=='—'?'/5':'');
+ const tot=acept+rech;
+ document.getElementById('ir10').textContent=tot?Math.round(acept/tot*100)+'%':'—';
+}
+function render(){
+ const th=document.getElementById('thead'),tb=document.getElementById('tbody');
+ let rows=[];
+ if(vista==='todos'){th.innerHTML='<th>Paciente</th><th>Tipo cita</th><th>Cita MI</th><th>Canal</th><th>Estado</th><th>Propuesta</th><th>Decisión médica</th><th>Satisf.</th>';rows=pacientes.map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d}</small></td><td>${p.tipo}</td><td>${p.cita}</td><td>${p.canal}</td><td>${tagE(p.estado)}${p.br?' <span class="tag r-RX">🚨</span>':''}</td><td>${tagR(p.prop)}</td><td>${tagR(p.fin)}</td><td>${p.sat?'⭐'+p.sat:'—'}</td></tr>`)}
+ if(vista==='llamadas'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Estado</th><th>Intentos</th><th>Acción (agente)</th>';
+  rows=pacientes.filter(p=>['No responde','Pidió llamada'].includes(p.estado)).map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d}</small></td><td>${p.cita}</td><td>${tagE(p.estado)}</td><td>${p.intentos}</td><td><button class="btn-sm" onclick="llamar('${p.d}')">Registrar llamada</button></td></tr>`);
+  if(!rows.length)rows=['<tr><td colspan="5">✅ Cola de llamadas vacía</td></tr>']}
+ if(vista==='medica'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Propuesta del motor</th><th>Conciliación del médico revisor</th>';
+  rows=pacientes.filter(p=>p.estado==='Completa'&&!p.fin).map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d}</small></td><td>${p.cita}</td><td>${tagR(p.prop)}${p.br?' <span class="tag r-RX">Bandera roja — verificar llamada del supervisor</span>':''}</td><td><button class="btn-sm" onclick="conciliar('${p.d}',true)">Aceptar propuesta</button><button class="btn-sm sec" onclick="conciliar('${p.d}',false)">Mantener MI presencial</button></td></tr>`);
+  if(!rows.length)rows=['<tr><td colspan="4">✅ Bandeja de conciliación vacía</td></tr>']}
+ if(vista==='resueltos'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Canal</th><th>Enrutamiento final</th><th>Entregable</th><th>Satisf.</th>';
+  const ent={R1:'PRE-RES-01 (trámite)',R2:'PRE-MG-01 a Medicina General',R3:'Telexperticia MG→Internista',R4:'PRE-MI-01 al internista'};
+  rows=pacientes.filter(p=>p.estado==='Resuelto').map(p=>`<tr><td><b>${p.n}</b></td><td>${p.cita}</td><td>${p.canal}</td><td>${tagR(p.fin)}</td><td>${ent[p.fin]||'—'}</td><td>${p.sat?'⭐'+p.sat:'—'}</td></tr>`)}
+ tb.innerHTML=rows.join('');
+}
+function llamar(d){
+ const p=pacientes.find(x=>x.d===d);p.intentos++;
+ if(p.intentos>=2){p.estado='Completa';p.canal='Teléfono';p.prop=['R1','R2','R4'][Math.floor(Math.random()*3)];p.sat=4;addFeed('📞 <b>'+p.n+'</b>: preconsulta telefónica completada (guion PRE-TEL-01) → propuesta '+p.prop+' → pasa a conciliación médica')}
+ else addFeed('📞 Llamada a <b>'+p.n+'</b> — intento '+p.intentos+' registrado (buzón / no contesta)');
+ render();kpis();funnel();alertas();
+}
+function conciliar(d,acepta){
+ const p=pacientes.find(x=>x.d===d);
+ if(acepta){p.fin=p.prop;acept++;addFeed('🩺 Médico revisor ACEPTÓ la propuesta '+p.prop+' de <b>'+p.n+'</b> — trazabilidad registrada')}
+ else{p.fin='R4';rech++;addFeed('🩺 Médico revisor decidió MANTENER MI presencial para <b>'+p.n+'</b> (salvaguarda: ante duda, presencial)')}
+ if(p.br){addFeed('🚨 Bandera roja de <b>'+p.n+'</b> gestionada: supervisor confirmó llamada y reprogramación protegida');p.br=false}
+ p.estado='Resuelto';
+ render();kpis();funnel();alertas();
+}
+function funnel(){
+ const enviados=pacientes.length;
+ const cont=pacientes.filter(p=>p.estado!=='Enviado').length;
+ const aceptaron=pacientes.filter(p=>!['No responde','Pidió llamada','Enviado'].includes(p.estado)||p.canal==='Teléfono').length;
+ const comp=pacientes.filter(p=>['Completa','Resuelto'].includes(p.estado)).length;
+ const conc=pacientes.filter(p=>p.fin).length;
+ const pasos=[['Mensajes enviados',enviados],['Contacto establecido',cont],['Consentimiento aceptado',Math.max(aceptaron,comp)],['Entrevista completa',comp],['Conciliación médica',conc]];
+ const max=Math.max(...pasos.map(p=>p[1]),1);
+ document.getElementById('funnel').innerHTML=pasos.map(p=>`<div><span class="lbl">${p[0]}</span><div class="bar" style="width:${Math.round(p[1]/max*100)}%">${p[1]}</div></div>`).join('');
+}
+function alertas(){
+ const el=document.getElementById('alertas');let h='';
+ const brs=pacientes.filter(p=>p.br);
+ brs.forEach(p=>h+=`<div class="alert red">🚨 <b>Bandera roja:</b> ${p.n} (${p.cita}) — verificar que el supervisor ya lo contactó.</div>`);
+ const pend=pacientes.filter(p=>['No responde','Pidió llamada'].includes(p.estado)).length;
+ if(pend>0)h+=`<div class="alert">📞 ${pend} paciente(s) en cola de llamadas. Asignar al agente de preconsulta telefónica.</div>`;
+ const sinConc=pacientes.filter(p=>p.estado==='Completa'&&!p.fin).length;
+ if(sinConc>0)h+=`<div class="alert">🩺 ${sinConc} preconsulta(s) pendientes de conciliación médica (bandeja del médico revisor).</div>`;
+ if(!h)h='<div class="alert" style="border-color:var(--ok);background:#e8f7ef">✅ Sin alertas. Operación normal.</div>';
+ el.innerHTML=h;
+}
+// Simulación en vivo
+const eventos=[
+ ()=>{const p=pacientes.find(x=>x.estado==='Enviado');if(p){p.estado='En conversación';addFeed('💬 <b>'+p.n+'</b> abrió el mensaje y aceptó el consentimiento digital')}},
+ ()=>{const p=pacientes.find(x=>x.estado==='En conversación');if(p){p.estado='Completa';p.prop=['R1','R2','R2','R4','R3'][Math.floor(Math.random()*5)];p.sat=[4,5,5][Math.floor(Math.random()*3)];addFeed('✅ <b>'+p.n+'</b> completó la entrevista digital → propuesta '+p.prop+' → bandeja médica')}},
+ ()=>{addFeed('📊 Extracto de citas actualizado (T-96h): nuevos episodios programados para mañana')}
+];
+setInterval(()=>{eventos[Math.floor(Math.random()*eventos.length)]();render();kpis();funnel();alertas();document.getElementById('reloj').textContent=hora()},7000);
+document.getElementById('reloj').textContent=hora();
+addFeed('Sistema iniciado — lote de citas de la próxima semana cargado (extracto CSV del software de citas)');
+render();kpis();funnel();alertas();
+</script>
+</body>
+</html>
