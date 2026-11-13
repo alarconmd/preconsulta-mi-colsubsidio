@@ -213,11 +213,11 @@ function kpis(){
 function render(){
  const th=document.getElementById('thead'),tb=document.getElementById('tbody');
  let rows=[];
- if(vista==='todos'){th.innerHTML='<th>Paciente</th><th>Tipo cita</th><th>Cita MI</th><th>Canal</th><th>Estado</th><th>Propuesta</th><th>Decisión médica</th><th>Satisf.</th><th>Interacción</th>';rows=pacientes.map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d}</small></td><td>${p.tipo}</td><td>${p.cita}</td><td>${p.canal}</td><td>${tagE(p.estado)}${p.br?' <span class="tag r-RX">🚨</span>':''}</td><td>${tagR(p.prop)}</td><td>${tagR(p.fin)}</td><td>${p.sat?'⭐'+p.sat:'—'}</td><td><button class="btn-sm sec" onclick="abrirDetalle('${p.uid}')">💬 Ver interacción</button></td></tr>`)}
+ if(vista==='todos'){th.innerHTML='<th>Paciente</th><th>Tipo cita</th><th>Cita MI</th><th>Canal</th><th>Estado</th><th>Ruta de entrada</th><th>Decisión médica</th><th>Satisf.</th><th>Interacción</th>';rows=pacientes.map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d}</small></td><td>${p.tipo}</td><td>${p.cita}</td><td>${p.canal}</td><td>${tagE(p.estado)}${p.br?' <span class="tag r-RX">🚨</span>':''}</td><td>${tagR(p.prop)}</td><td>${tagR(p.fin)}</td><td>${p.sat?'⭐'+p.sat:'—'}</td><td><button class="btn-sm sec" onclick="abrirDetalle('${p.uid}')">💬 Ver interacción</button></td></tr>`)}
  if(vista==='llamadas'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Estado</th><th>Intentos</th><th>Acción (agente)</th>';
   rows=pacientes.filter(p=>['No responde','Pidió llamada'].includes(p.estado)).map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d}</small></td><td>${p.cita}</td><td>${tagE(p.estado)}</td><td>${p.intentos}</td><td><button class="btn-sm" onclick="llamar('${p.d}')">Registrar llamada</button></td></tr>`);
   if(!rows.length)rows=['<tr><td colspan="5">✅ Cola de llamadas vacía</td></tr>']}
- if(vista==='medica'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Propuesta</th><th>Criterio de la propuesta (por qué)</th><th>Verificación y decisión del médico</th>';
+ if(vista==='medica'){th.innerHTML='<th>Paciente</th><th>Cita MI</th><th>Ruta de entrada</th><th>Criterio de la ruta (por qué)</th><th>Verificación y decisión del médico</th>';
   rows=pacientes.filter(p=>p.estado==='Completa'&&!p.fin).map(p=>`<tr><td><b>${p.n}</b><br><small>${p.d} · ${p.canal}</small></td><td>${p.cita}</td><td>${tagR(p.prop)}${p.br?' <span class="tag r-RX">Bandera roja</span>':''}</td><td style="max-width:380px;white-space:normal"><b>${esc(CORTO[p.prop]||'—')}</b><br><small style="color:#5b6b7b">${esc(gatillo(p))}</small><br><button class="btn-sm" style="background:#00a19a" onclick="abrirDetalle('${p.uid}')">💬 Ver interacción y contexto completo</button></td><td><button class="btn-sm" onclick="conciliar('${p.d}',true)">✅ Aceptar propuesta</button><button class="btn-sm sec" onclick="conciliar('${p.d}',false)"> Mantener MI presencial</button></td></tr>`);
   if(!rows.length)rows=['<tr><td colspan="5">✅ Bandeja de conciliación vacía</td></tr>']}
  if(vista==='entregables'){th.innerHTML='<th>ID</th><th>Paciente</th><th>Canal / estado</th><th>Tipo de entregable</th><th>Abrir</th>';
@@ -230,13 +230,13 @@ function render(){
 }
 function llamar(d){
  const p=pacientes.find(x=>x.d===d);p.intentos++;
- if(p.intentos>=2){p.estado='Completa';p.canal='Teléfono';p.prop=['R1','R2','R4'][Math.floor(Math.random()*3)];p.sat=4;addFeed('📞 <b>'+p.n+'</b>: preconsulta telefónica completada (guion PRE-TEL-01) → propuesta '+p.prop+' → pasa a conciliación médica')}
+ if(p.intentos>=2){p.estado='Completa';p.canal='Teléfono';p.prop=['R1','R2','R4'][Math.floor(Math.random()*3)];p.sat=4;addFeed('📞 <b>'+p.n+'</b>: preconsulta telefónica completada (guion PRE-TEL-01) → ruta '+p.prop+' → pasa a conciliación médica')}
  else addFeed('📞 Llamada a <b>'+p.n+'</b> — intento '+p.intentos+' registrado (buzón / no contesta)');
  render();kpis();funnel();alertas();
 }
 function conciliar(d,acepta){
  const p=pacientes.find(x=>x.d===d);
- if(acepta){p.fin=p.prop;acept++;addFeed('🩺 Médico revisor ACEPTÓ la propuesta '+p.prop+' de <b>'+p.n+'</b> — trazabilidad registrada')}
+ if(acepta){p.fin=p.prop;acept++;addFeed('🩺 Médico revisor ACEPTÓ la ruta '+p.prop+' de <b>'+p.n+'</b> — trazabilidad registrada')}
  else{p.fin='R4';rech++;addFeed('🩺 Médico revisor decidió MANTENER MI presencial para <b>'+p.n+'</b> (salvaguarda: ante duda, presencial)')}
  if(p.br){addFeed('🚨 Bandera roja de <b>'+p.n+'</b> gestionada: supervisor confirmó llamada y reprogramación protegida');p.br=false}
  p.estado='Resuelto';
@@ -370,7 +370,7 @@ function entregableHtml(p){
  const enc=`<div class="doch">📄 ${tipo}<br><small>ID interacción: ${esc(String(p.uid))} · Canal: ${esc(p.canal)} · Fecha: ${esc(p.ses?p.ses.fecha:'—')} · Estado: ${esc(p.ses?p.ses.estado:p.estado)}</small></div>`;
  const ide=`<div class="kv2">Paciente: ${esc(p.n)} · ${esc(p.d)}\nCita MI original: ${esc(p.cita)} (${esc(p.tipo)})\nConsentimiento digital: Sí (Res. 2654/2019 art. 7) · Banderas rojas: ${p.prop==='RX'?'SÍ':'No'}</div>`;
  const res=`<div class="kv2">RESUMEN DE LA ENTREVISTA (preconsulta)\nMotivo (palabras del paciente): ${esc((p.ses&&p.ses.motivo)||r.motivo)}\nObjetivo declarado: ${esc((p.ses&&p.ses.objetivo)||r.objetivo)}\nSíntomas nuevos/empeoramiento: ${esc((p.ses&&p.ses.sn)||r.sn)}\nExámenes recientes: ${esc((p.ses&&p.ses.exa)||r.exa)}\nMedicamentos permanentes: ${esc((p.ses&&p.ses.meds)||r.meds)}</div>`;
- const traz=`<div class="kv2">TRAZABILIDAD\nPropuesta del motor: ${esc(p.prop)} · Regla: ${esc(CORTO[p.prop]||'—')}\nConciliación médica: ${esc(p.fin?(p.fin==='R4'?'MANTENER MI presencial':'propuesta aceptada → '+p.fin):'pendiente de revisión')}\nMédico revisor: ${p.fin?'[nombre y registro del médico]':'—'}</div>`;
+ const traz=`<div class="kv2">TRAZABILIDAD\nRuta de entrada (priorización): ${esc(p.prop)} · Regla: ${esc(CORTO[p.prop]||'—')}\nConciliación médica: ${esc(p.fin?(p.fin==='R4'?'MANTENER MI presencial':'ruta aceptada → '+p.fin):'pendiente de revisión')}\nMédico revisor: ${p.fin?'[nombre y registro del médico]':'—'}</div>`;
  let cuerpo='';
  if(p.prop==='R2'){
   cuerpo=enc+ide+res+
@@ -404,7 +404,7 @@ function soapHtml(p){
  const meds=(p.ses&&p.ses.meds)||r.meds;
  const S='Paciente '+p.n+' ('+p.d+') contactado por preconsulta para cita '+p.cita+' ('+p.tipo+'), canal '+p.canal+'.\nRefiere motivo: "'+motivo+'".\nObjetivo del paciente: "'+obj+'".\nSíntomas nuevos o empeoramiento: '+sn+'.\nExámenes recientes disponibles: '+exa+'.\nMedicamentos permanentes: '+meds+'.\nBanderas rojas: negativas en el filtro previo.';
  const O='Registro de preconsulta — ID '+p.uid+' · canal '+p.canal+' · fecha '+(p.ses?p.ses.fecha:'—')+' · consentimiento digital: Sí.\nFiltro de banderas rojas: NEGATIVO.\nConstantes vitales y examen físico: NO recolectados en preconsulta (se toman en la consulta).';
- const E='Propuesta del motor (árbol firmado por el internista): '+p.prop+' — '+(CORTO[p.prop]||'—')+'\n'+gatillo(p)+'\nConciliación médica: '+(p.fin?(p.fin==='R4'?'mantener MI presencial':'propuesta aceptada → '+p.fin):'pendiente')+'\n\n✍️ VALORACIÓN Y DIAGNÓSTICO DEL PROFESIONAL:';
+ const E='Priorización (árbol firmado por el internista): '+p.prop+' — '+(CORTO[p.prop]||'—')+'\n'+gatillo(p)+'\nConciliación médica: '+(p.fin?(p.fin==='R4'?'mantener MI presencial':'ruta aceptada → '+p.fin):'pendiente')+'\n\n✍️ VALORACIÓN Y DIAGNÓSTICO DEL PROFESIONAL:';
  const P='Plan derivado de la ruta '+p.prop+': '+entregaTexto(p)+(p.prop==='R2'?'\nObjetivo específico MG: '+objetivoEsp(p)+'\nCriterio de retorno a MI: [árbol firmado]':'')+'\n\n✍️ PLAN ADICIONAL DEL PROFESIONAL:';
  return soapBlock('S — Subjetivo',S,true)+soapBlock('O — Objetivo',O,true)+soapBlock('E — Evaluación / Análisis',E,false)+soapBlock('P — Plan',P,false)+
  '<p style="font-size:.7rem;color:#5b6b7b">Nota modular SOAP generada a partir de la preconsulta; los bloques E y P son editables por el profesional antes de guardar. Compatible con registro clínico estructurado (Res. 1995/1999; Ley 2015/2020 — HCE interoperable).</p>';
@@ -416,7 +416,7 @@ function contexto(p){
  let objMG='';
  if(p.ses)objMG='Objetivo del paciente: '+(p.ses.objetivo||'—');
  else objMG=p.tipo==='Primera vez'?'Diagnóstico inicial del síntoma + exámenes de preparación; si hay criterios, devolver con MI':'Control y reformulación integral; ordenar exámenes de preparación para MI si aplica';
- const conc=p.fin?(p.fin==='R4'?'Decisión: MANTENER MI presencial (salvaguarda ante duda)':'Decisión: propuesta ACEPTADA → '+p.fin):'Pendiente de conciliación médica (el médico revisor decide)';
+ const conc=p.fin?(p.fin==='R4'?'Decisión: MANTENER MI presencial (salvaguarda ante duda)':'Decisión: ruta ACEPTADA → '+p.fin):'Pendiente de conciliación médica (el médico revisor decide)';
  let h='';
  h+='<div class="rule"><b>Regla aplicada del árbol (firmado por el internista):</b><br>'+esc(REGLAS[p.prop]||'—')+'</div>';
  h+='<div class="kv2">Tipo de cita: '+esc(p.tipo)+'\nMotivo del paciente: '+esc((p.ses&&p.ses.motivo)||r.motivo)+'\nObjetivo declarado: '+esc((p.ses&&p.ses.objetivo)||r.objetivo)+'\nSíntomas nuevos/empeoramiento: '+esc((p.ses&&p.ses.sn)||r.sn)+'\nExámenes recientes: '+esc((p.ses&&p.ses.exa)||r.exa)+'\nMedicamentos permanentes: '+esc((p.ses&&p.ses.meds)||r.meds)+'\nBanderas rojas: '+(p.prop==='RX'?'SÍ — '+esc((p.ses&&p.ses.br&&p.ses.br[0])||'síntoma de alarma reportado'):'No')+'</div>';
@@ -446,7 +446,7 @@ function chatHtml(){
 let cur=null,curSec=0;
 function abrirDetalle(uid,sec){
  const p=pacientes.find(x=>x.uid===uid); if(!p)return; cur=p;
- document.getElementById('mTitle').textContent='ID '+String(p.uid)+' — '+p.n+' · cita '+p.cita+' · propuesta '+p.prop+(p.ses?' (interacción real del demo)':' (caso de ejemplo del lote)');
+ document.getElementById('mTitle').textContent='ID '+String(p.uid)+' — '+p.n+' · cita '+p.cita+' · ruta '+p.prop+(p.ses?' (interacción real del demo)':' (caso de ejemplo del lote)');
  document.getElementById('mCtx').innerHTML=contexto(p);
  seccionModal(sec||0);
  document.getElementById('modal').classList.add('show');
@@ -465,7 +465,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrarDetalle()});
 // Simulación en vivo
 const eventos=[
  ()=>{const p=pacientes.find(x=>x.estado==='Enviado');if(p){p.estado='En conversación';addFeed('💬 <b>'+p.n+'</b> abrió el mensaje y aceptó el consentimiento digital')}},
- ()=>{const p=pacientes.find(x=>x.estado==='En conversación');if(p){p.estado='Completa';p.prop=['R1','R2','R2','R4','R3'][Math.floor(Math.random()*5)];p.sat=[4,5,5][Math.floor(Math.random()*3)];addFeed('✅ <b>'+p.n+'</b> completó la entrevista digital → propuesta '+p.prop+' → bandeja médica')}},
+ ()=>{const p=pacientes.find(x=>x.estado==='En conversación');if(p){p.estado='Completa';p.prop=['R1','R2','R2','R4','R3'][Math.floor(Math.random()*5)];p.sat=[4,5,5][Math.floor(Math.random()*3)];addFeed('✅ <b>'+p.n+'</b> completó la entrevista digital → ruta '+p.prop+' → bandeja médica')}},
  ()=>{addFeed('📊 Extracto de citas actualizado (T-96h): nuevos episodios programados para mañana')}
 ];
 setInterval(()=>{eventos[Math.floor(Math.random()*eventos.length)]();render();kpis();funnel();alertas();document.getElementById('reloj').textContent=hora()},7000);
