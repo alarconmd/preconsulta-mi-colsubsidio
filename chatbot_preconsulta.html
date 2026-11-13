@@ -192,16 +192,16 @@ function resolver(){
  else if(S.motivo==='Síntoma nuevo'&&S.sn==='no'&&S.tipo==='Primera vez'){ruta='R2';razon='Primera vez, baja sospecha → MG primero: diagnóstico inicial + exámenes de preparación';tagCls='t-r2'}
  else {ruta='R4';razon='Pertinencia de especialista confirmada → se mantiene MI con resumen previo';tagCls='t-r4'}
  S.ruta=ruta;
- setEstado('🧭 Motor de reglas → propuesta '+ruta+': '+razon+'\n⏳ Pasa a la BANDEJA DE CONCILIACIÓN del médico (revisión humana diaria).');
+ setEstado('🧭 Motor de priorización → ruta de entrada '+ruta+': '+razon+'\n⏳ Pasa a la bandeja de priorización del médico (revisión humana diaria · MGTE).');
  const nombres={R1:'Resolución administrativa',R2:'Reencauzar a Medicina General',R3:'Teleinterconsulta MG→Internista',R4:'Permanece con Internista'};
  let ent='';
- if(ruta==='R1')ent='PRE-RES-01 → Circuito administrativo\nTrámite: '+S.motivo+' · Compromiso: solución en 5 días hábiles\nCita MI: liberada (previa conciliación médica)';
- if(ruta==='R2')ent='PRE-MG-01 → Entregable al MÉDICO GENERAL\nMotivo: '+S.motivo+' ('+S.tipo+')\nObjetivo: '+(S.objetivo==='No definido'?'definir necesidad en consulta MG':S.objetivo)+(S.exa==='no'?'\n+ Ordenar exámenes básicos de preparación para MI':'')+'\nCriterio de retorno a MI: [árbol firmado] · Cita MI: liberada o condicionada';
+ if(ruta==='R1')ent='PRE-RES-01 → Circuito administrativo\nTrámite: '+S.motivo+' · Compromiso: solución en 5 días hábiles\nCita MI: programada en la ventana oportuna (≤15 días · nunca se niega)';
+ if(ruta==='R2')ent='PRE-MG-01 → Entregable al MÉDICO GENERAL\nMotivo: '+S.motivo+' ('+S.tipo+')\nObjetivo: '+(S.objetivo==='No definido'?'definir necesidad en consulta MG':S.objetivo)+(S.exa==='no'?'\n+ Ordenar exámenes básicos de preparación para MI':'')+'\nCriterio de retorno a MI: [árbol firmado] · Cita MI: priorizada ≤15 días / ruta de programa';
  if(ruta==='R3')ent='TELEXPERTICIA (Res. 2654/2019 art. 17)\nCaso estructurado al internista (respuesta <24 h hábiles). El MG decide la conducta; el internista responde por su opinión.';
  if(ruta==='R4')ent='PRE-MI-01 → Resumen previo para el INTERNISTA\nMotivo real: '+S.motivo+' · Objetivo: '+S.objetivo+'\nSíntomas nuevos: '+S.sn+' · Exámenes: '+S.exa+' · Medicamentos: '+S.meds+'\nCita MI: CONFIRMADA 05-nov 8:40 a.m.';
  entregable.textContent=ent;
  acciones.innerHTML='<span class="tag '+tagCls+'">'+ruta+' · '+nombres[ruta]+'</span><br><br>Dashboard: "Entrevista completa — pendiente conciliación médica" · Consentimiento y resumen anexables a la HC';
- botMsg('¡Listo! Este es el resumen de lo que me contó:\n\n• Motivo: '+S.motivo+' ('+S.tipo+')\n• Objetivo: '+S.objetivo+'\n• Síntomas nuevos o empeoramiento: '+S.sn+'\n• Exámenes recientes: '+S.exa+'\n• Medicamentos permanentes: '+S.meds+'\n\nUn médico revisará sus respuestas y a más tardar mañana le confirmaremos: si su cita con el internista se mantiene, o si primero lo verá un médico general con un objetivo claro para adelantar todo.','Res. 2654/2019 art. 10: resumen al usuario. La cita NO se cancela automáticamente: decide el médico revisor.',()=>{
+ botMsg('¡Listo! Este es el resumen de lo que me contó:\n\n• Motivo: '+S.motivo+' ('+S.tipo+')\n• Objetivo: '+S.objetivo+'\n• Síntomas nuevos o empeoramiento: '+S.sn+'\n• Exámenes recientes: '+S.exa+'\n• Medicamentos permanentes: '+S.meds+'\n\nUn médico revisará sus respuestas y a más tardar mañana le confirmaremos: si su cita con el internista se mantiene, o si primero lo verá un médico general con un objetivo claro, en trabajo conjunto con la especialidad.','Res. 2654/2019 art. 10: resumen al usuario. La cita NO se cancela automáticamente: decide el médico revisor.',()=>{
  guardarSesion(ruta,razon,ent,'Pendiente conciliación médica');
  satisfaccion()})}
 function satisfaccion(){

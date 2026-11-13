@@ -266,16 +266,16 @@ function alertas(){
 // ===== Detalle de interacción: transcripción exacta + contexto de la decisión =====
 const REGLAS={
  R1:'Regla 2 — Necesidad administrativa o reformulación estable SIN síntomas nuevos → se resuelve por el circuito administrativo (PRE-RES-01) y se libera la cita de MI, previa conciliación médica.',
- R2:'Regla 3/4 — Control de enfermedad crónica compensado sin síntomas nuevos, O primera vez con síntoma de baja sospecha: es competencia de MEDICINA GENERAL → se reencauza con objetivo específico escrito (PRE-MG-01), dejando criterio explícito de devolución a MI. La cita de MI se libera o se condiciona según el médico revisor.',
+ R2:'Regla 3/4 — Control de enfermedad crónico compensado sin síntomas nuevos, O primera vez con síntoma de baja sospecha → RUTA C (ruta de programa de la especialidad, ≤15 días) o trabajo conjunto con MG. La solicitud de especialista NUNCA se niega; se prioriza y se secuencia (Res. 1552/2013 art. 1; Res. 2117/2025).',
  R3:'Regla 5 — Información incierta o inconsistente → teleinterconsulta MG→internista (telexperticia, Res. 2654/2019 art. 17) antes de decidir. No se toma ninguna decisión sin información suficiente.',
- R4:'Regla 6 — Pertinencia de especialista confirmada (síntomas nuevos en crónico, descompensación, comorbilidades) → permanece con MEDICINA INTERNA y recibe resumen previo (PRE-MI-01).',
- RX:'Regla 1 (máxima prioridad) — Bandera roja reportada → recomendación inmediata de urgencias + alerta al equipo humano. No continúa por el filtro.',
+ R4:'Regla 6 — Pertinencia de especialista confirmada (síntomas nuevos en crónico, descompensación, comorbilidades) → RUTA A: MI presencial dentro de la meta de ≤15 días, con resumen previo (PRE-MI-01).',
+ RX:'Regla 1 (máxima prioridad) — Bandera roja reportada → recomendación inmediata de urgencias + alerta al equipo humano. Prioridad máxima dentro del MGTE.',
  TEL:'Decisión del usuario — eligió el canal telefónico → cola de llamadas del dashboard; el agente aplica el guion PRE-TEL-01 con el mismo árbol.',
  NOP:'Decisión del usuario — rechazó la preconsulta (libre escogencia, Res. 2654/2019 art. 4) → sin datos clínicos, cita intacta.'
 };
 const CORTO={
  R1:'Reformulación estable o trámite SIN síntomas nuevos → no requiere especialista (Regla 2).',
- R2:'Crónico compensado sin síntomas nuevos, O primera vez de baja sospecha → competencia de MEDICINA GENERAL (Reglas 3/4).',
+ R2:'Crónico compensado sin síntomas nuevos, O primera vez de baja sospecha → RUTA C o trabajo conjunto con MG (Reglas 3/4).',
  R3:'Respuestas inciertas o inconsistentes → telexperticia MG→MI antes de decidir (Regla 5).',
  R4:'Pertinencia de especialista confirmada → permanece con MI (Regla 6).',
  RX:'Bandera roja → urgencias + alerta humana (Regla 1).',
@@ -349,7 +349,7 @@ function transEjemplo(p){
 function esc(t){return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function entregaTexto(p){
  return {R1:'PRE-RES-01 → circuito administrativo (trámite sin cita de especialista)',
-  R2:'PRE-MG-01 → entregable al médico general con objetivo específico escrito',
+  R2:'PRE-MG-01 → entregable al médico general (trabajo conjunto con la especialidad)',
   R3:'Telexperticia MG→internista, Res. 2654/2019 art. 17 (respuesta <24 h hábiles)',
   R4:'PRE-MI-01 → resumen previo para el internista (cita confirmada)',
   RX:'Alerta RX → supervisor de salud (escalamiento <15 min)',
