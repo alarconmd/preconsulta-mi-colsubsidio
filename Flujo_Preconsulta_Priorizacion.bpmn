@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Defs_Preconsulta_MI" targetNamespace="https://valarsalud.co/preconsulta-mi" name="Preconsulta y priorización Medicina Interna">
+<bpmn:process id="Proceso_Preconsulta_Priorizacion_MI" name="Preconsulta y mecanismo de priorización — Medicina Interna (Valar Salud / Colsubsidio)" isExecutable="false">
+<bpmn:startEvent id="A0" name="Solicitud/cita MI registrada"><bpmn:documentation>MÉTODO DE ANÁLISIS: Captura del evento y fuente de solicitud.
+CRITERIO DE DECISIÓN: Paciente, fecha solicitud/remisión, tipo y cita disponibles.
+ALTERNATIVAS: Si falta dato: corregir fuente; no inferir.
+EVIDENCIA: MGTE operativo
+NORMA: Res. 2117/2025; Circular 038/2025; Res. 1552/2013
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:startEvent>
+<bpmn:task id="A1" name="Crear episodio e ID único"><bpmn:documentation>MÉTODO DE ANÁLISIS: Regla determinística documento + cita + fecha.
+CRITERIO DE DECISIÓN: Un episodio por solicitud; duplicados se identifican.
+ALTERNATIVAS: Revisión administrativa; nunca borrar solicitud.
+EVIDENCIA: Trazabilidad MGTE
+NORMA: Res. 2117/2025
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="A2" name="Calcular antigüedad y oportunidad"><bpmn:documentation>MÉTODO DE ANÁLISIS: Días calendario solicitud→asignación y atención.
+CRITERIO DE DECISIÓN: Antigüedad compone prioridad con criterio clínico.
+ALTERNATIVAS: Dato faltante se marca; no excluye.
+EVIDENCIA: Circular 038: meta MI &lt;15 días
+NORMA: Res. 2117/2025; Circular 038/2025
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="A3" name="Contactar 72–96 h antes (bot)"><bpmn:documentation>MÉTODO DE ANÁLISIS: Teleorientación y captura estructurada por canal digital.
+CRITERIO DE DECISIÓN: Paciente de cohorte con cita identificada.
+ALTERNATIVAS: Prefiere llamada/no responde→cola; no desea→cita intacta.
+EVIDENCIA: E7 solo evidencia operativa
+NORMA: Res. 2654/2019 arts. 4,7,9–12
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="A4" name="Consentimiento y libre escogencia"><bpmn:documentation>MÉTODO DE ANÁLISIS: Aceptación digital con versión, fecha y trazabilidad.
+CRITERIO DE DECISIÓN: Sin aceptación no se capturan datos clínicos.
+ALTERNATIVAS: Llamada humana o no participar; cita intacta.
+EVIDENCIA: Consentimiento informado digital
+NORMA: Res. 2654/2019 art.7; Ley 1581/2012; Ley 527/1999
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:exclusiveGateway id="G1" name="¿Acepta y responde?" gatewayDirection="Diverging"><bpmn:documentation>MÉTODO DE ANÁLISIS: Evaluación de autorización y canal.
+CRITERIO DE DECISIÓN: Sí→identidad; prefiere llamada/no responde→cola; no→mantener cita.
+ALTERNATIVAS: Toda salida preserva el acceso.
+EVIDENCIA: E7; humanización
+NORMA: Res. 2654/2019 arts.4,12.1; Res. 1315/2026
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:exclusiveGateway>
+<bpmn:task id="A5" name="Cola de llamadas + intentos"><bpmn:documentation>MÉTODO DE ANÁLISIS: Regla operativa con intentos, franja y resultado.
+CRITERIO DE DECISIÓN: Hasta 2 intentos en franjas distintas (gobernanza del piloto).
+ALTERNATIVAS: Si no contacta: mantener cita original.
+EVIDENCIA: Canal de respaldo; umbral operativo, no clínico
+NORMA: Res. 2654/2019 arts.6 par.,9–10
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="A5b" name="Preconsulta telefónica PRE-TEL-01"><bpmn:documentation>MÉTODO DE ANÁLISIS: Mismo árbol, agente supervisado; sin juicio clínico.
+CRITERIO DE DECISIÓN: Contacto efectivo, consentimiento e identidad verificados.
+ALTERNATIVAS: Bandera/duda→supervisor; falla identidad→cita intacta.
+EVIDENCIA: E5/E6 justifican supervisión
+NORMA: Res. 2654/2019 arts.6 par.,9–12
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="A7" name="Mantener cita original sin cambios"><bpmn:documentation>MÉTODO DE ANÁLISIS: Regla de libre escogencia/no denegación.
+CRITERIO DE DECISIÓN: Rechazo, identidad fallida o contacto imposible.
+ALTERNATIVAS: No hay captura ni cambio de ruta.
+EVIDENCIA: No denegación
+NORMA: Res. 1552/2013 art.1; Res. 2654/2019 art.4
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="A6" name="Verificar identidad"><bpmn:documentation>MÉTODO DE ANÁLISIS: Últimos 4 dígitos + fecha nacimiento u OTP.
+CRITERIO DE DECISIÓN: Coincidencia con registro de cita.
+ALTERNATIVAS: Si falla: sin datos clínicos; ofrecer llamada; cita intacta.
+EVIDENCIA: Identificación segura
+NORMA: Res. 2654/2019 art.12.3; Res. 3100/2019
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:exclusiveGateway id="G2" name="¿Identidad confirmada?" gatewayDirection="Diverging"><bpmn:documentation>MÉTODO DE ANÁLISIS: Comparación de factores de identidad.
+CRITERIO DE DECISIÓN: Sí→banderas rojas; no→mantener cita sin datos.
+ALTERNATIVAS: No se continúa con información clínica si falla.
+EVIDENCIA: Seguridad del paciente
+NORMA: Res. 2654/2019 art.12.3
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:exclusiveGateway>
+<bpmn:task id="B1" name="Pantalla de banderas rojas"><bpmn:documentation>MÉTODO DE ANÁLISIS: Lista determinística conservadora antes del motivo.
+CRITERIO DE DECISIÓN: Cualquier positivo→RX; no sabe/no comprende→humano.
+ALTERNATIVAS: Nunca descarte autónomo ni diagnóstico.
+EVIDENCIA: E5/E6: exactitud variable; supervisión obligatoria
+NORMA: Res. 2654/2019 art.27
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:exclusiveGateway id="G3" name="¿Bandera roja?" gatewayDirection="Diverging"><bpmn:documentation>MÉTODO DE ANÁLISIS: Regla de seguridad de máxima prioridad.
+CRITERIO DE DECISIÓN: Sí→urgencias y alerta; no→entrevista estructurada.
+ALTERNATIVAS: Si duda: escalamiento humano.
+EVIDENCIA: E5/E6
+NORMA: Res. 2654/2019 art.27
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:exclusiveGateway>
+<bpmn:task id="RX" name="Urgencias + alerta &lt;15 min; proteger cita"><bpmn:documentation>MÉTODO DE ANÁLISIS: Escalamiento inmediato al supervisor y reprogramación protegida.
+CRITERIO DE DECISIÓN: Bandera roja positiva.
+ALTERNATIVAS: Contacto humano confirma; no se cierra solicitud por inasistencia.
+EVIDENCIA: Seguridad; prioridad máxima MGTE
+NORMA: Res. 2654/2019 art.27; Res. 2117/2025
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:endEvent id="E2" name="Cierre con alerta resuelta"><bpmn:documentation>MÉTODO DE ANÁLISIS: Registro de contacto, conducta y seguimiento.
+CRITERIO DE DECISIÓN: Supervisor documenta gestión y reprogramación.
+ALTERNATIVAS: Si no contacta: llamada prioritaria y preservación de atención.
+EVIDENCIA: Trazabilidad de seguridad
+NORMA: Res. 2654/2019 art.27
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:endEvent>
+<bpmn:task id="B2" name="Entrevista estructurada P2–P7"><bpmn:documentation>MÉTODO DE ANÁLISIS: Tipo, motivo, objetivo, síntomas nuevos, paráclínicos, medicamentos.
+CRITERIO DE DECISIÓN: Recolectar necesidad y contexto; no diagnosticar.
+ALTERNATIVAS: Ambigüedad/incoherencia→aclaración humana.
+EVIDENCIA: E7: evaluación de servicio, no eficacia clínica
+NORMA: Res. 2654/2019 arts.9–10
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="B3" name="Generar resumen estructurado"><bpmn:documentation>MÉTODO DE ANÁLISIS: Plantilla versionada sin inferencias no presentes.
+CRITERIO DE DECISIÓN: Solo se consolida lo respondido.
+ALTERNATIVAS: Campo obligatorio faltante→incompleto.
+EVIDENCIA: Registro clínico estructurado
+NORMA: Res. 2654/2019 art.10; Res. 1995/1999; Ley 2015/2020
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="B4" name="Validar suficiencia y consistencia"><bpmn:documentation>MÉTODO DE ANÁLISIS: Completitud + reglas simples de coherencia.
+CRITERIO DE DECISIÓN: Suficiente y sin contradicciones para revisión.
+ALTERNATIVAS: Si no: teléfono o profesional; no ruta automática.
+EVIDENCIA: E5/E6 exigen control humano
+NORMA: Res. 2654/2019 arts.5,27
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:exclusiveGateway id="G4" name="¿Información suficiente?" gatewayDirection="Diverging"><bpmn:documentation>MÉTODO DE ANÁLISIS: Completitud y consistencia del registro.
+CRITERIO DE DECISIÓN: Sí→revisión clínica; no→escalar/contactar.
+ALTERNATIVAS: Sin información no se asigna ruta.
+EVIDENCIA: E5/E6
+NORMA: Res. 2654/2019 arts.5,27
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:exclusiveGateway>
+<bpmn:task id="B4x" name="Escalar a profesional / contacto telefónico"><bpmn:documentation>MÉTODO DE ANÁLISIS: Completar o aclarar con humano supervisado.
+CRITERIO DE DECISIÓN: Respuesta faltante, ambigua o inconsistente.
+ALTERNATIVAS: Si persiste duda: presencial MI.
+EVIDENCIA: Seguridad y autonomía profesional
+NORMA: Res. 2654/2019 arts.5,6 par.
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="B5" name="Revisión clínica y priorización"><bpmn:documentation>MÉTODO DE ANÁLISIS: Profesional aplica nivel clínico + antigüedad; sistema solo propone.
+CRITERIO DE DECISIÓN: Emergente/urgente/semi-urgente/no urgente; documentar razón.
+ALTERNATIVAS: Ante duda: presencial MI; ninguna rama sin médico.
+EVIDENCIA: Mecanismo explícito MGTE
+NORMA: Res. 2117/2025; Res. 2654/2019 art.5; Ley 1751/2015 art.17
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="B6" name="Elegibilidad para telemedicina"><bpmn:documentation>MÉTODO DE ANÁLISIS: Juicio profesional + conectividad + aceptación.
+CRITERIO DE DECISIÓN: Solo si valoración a distancia es segura y útil.
+ALTERNATIVAS: Si no: Ruta A o C; nunca forzar canal.
+EVIDENCIA: E1: 93 ECA, N=22.047; depende del contexto
+NORMA: Res. 2654/2019 arts.13–16; Res. 3100/2019
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:exclusiveGateway id="G5" name="¿Ruta A, B o C?" gatewayDirection="Diverging"><bpmn:documentation>MÉTODO DE ANÁLISIS: Prioridad clínica + antigüedad + elegibilidad + elección.
+CRITERIO DE DECISIÓN: A: urgente/compleja; B: semi-urgente elegible; C: no urgente/programable.
+ALTERNATIVAS: Ante duda: A presencial; solicitud MI siempre abierta.
+EVIDENCIA: E1/E2/E3/E4/E8; Circular 038 meta &lt;15 días
+NORMA: Res. 2117/2025; Res. 1552/2013; Res. 2654/2019
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:exclusiveGateway>
+<bpmn:task id="C1" name="RUTA A: presencial MI ≤15 días"><bpmn:documentation>MÉTODO DE ANÁLISIS: Asignación prioritaria + PRE-MI-01.
+CRITERIO DE DECISIÓN: Urgente/emergente no diferible, complejidad o descompensación.
+ALTERNATIVAS: Si médico y paciente lo deciden: B; si requiere preparación: C.
+EVIDENCIA: E1 no prueba selección; meta operativa
+NORMA: Circular 038/2025; Res. 2117/2025
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="C2" name="RUTA B: telemedicina MI ≤15 días"><bpmn:documentation>MÉTODO DE ANÁLISIS: Teleconsulta habilitada + consentimiento.
+CRITERIO DE DECISIÓN: Semi-urgente elegible y paciente acepta.
+ALTERNATIVAS: Falla técnica/clínica→A; preparación pendiente→C.
+EVIDENCIA: E1: resultados comparables en contextos seleccionados
+NORMA: Res. 2654/2019 arts.13–16; Res. 3100/2019
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="C3" name="RUTA C: programa por partes"><bpmn:documentation>MÉTODO DE ANÁLISIS: Paráclínicos→integración→MG/telexperticia→MI si procede.
+CRITERIO DE DECISIÓN: No urgente/rutinario, crónico estable o resoluble en etapas.
+ALTERNATIVAS: Nuevos criterios→A/B; solicitud MI permanece abierta.
+EVIDENCIA: E2/E3/E4/E8; E4 exige selección (&lt;10% en algunos servicios)
+NORMA: Res. 2654/2019 arts.11,17; Res. 2626/2019
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="C4" name="Comunicar ruta, criterio y fecha"><bpmn:documentation>MÉTODO DE ANÁLISIS: Mensaje claro + entregable al profesional.
+CRITERIO DE DECISIÓN: Paciente conoce por qué y cuándo será atendido.
+ALTERNATIVAS: MANTENER→conservar cita MI; sin cambios automáticos.
+EVIDENCIA: Libre escogencia y resumen al usuario
+NORMA: Res. 2654/2019 arts.4,10; Res. 1315/2026
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:exclusiveGateway id="G6" name="¿Paciente acepta la ruta?" gatewayDirection="Diverging"><bpmn:documentation>MÉTODO DE ANÁLISIS: Elección informada del paciente.
+CRITERIO DE DECISIÓN: Sí→ejecutar; no/MANTENER→cita MI original.
+ALTERNATIVAS: No hay cambio de ruta sin aceptación o indicación médica.
+EVIDENCIA: Libre escogencia
+NORMA: Res. 2654/2019 art.4
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:exclusiveGateway>
+<bpmn:task id="C6" name="Mantener cita MI original / presencial"><bpmn:documentation>MÉTODO DE ANÁLISIS: Conservar atención por libre escogencia o duda.
+CRITERIO DE DECISIÓN: Paciente no acepta ruta o revisor lo decide.
+ALTERNATIVAS: No se cierra solicitud; registrar decisión.
+EVIDENCIA: No denegación
+NORMA: Res. 1552/2013 art.1; Res. 2654/2019 art.4
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="C5" name="Ejecutar atención y registrar en HC"><bpmn:documentation>MÉTODO DE ANÁLISIS: Atención efectiva + documentos soporte por ID.
+CRITERIO DE DECISIÓN: Atención prestada y trazada.
+ALTERNATIVAS: Inasistencia→reprogramar por prioridad, no cerrar solicitud.
+EVIDENCIA: Registro clínico
+NORMA: Res. 2654/2019 art.13 par.2; Res. 1995/1999
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="D1" name="Actualizar dashboard e indicadores"><bpmn:documentation>MÉTODO DE ANÁLISIS: Contacto, prioridad, ruta, tiempos, satisfacción por ID.
+CRITERIO DE DECISIÓN: Datos completos y trazables.
+ALTERNATIVAS: Dato faltante se marca; no se imputa.
+EVIDENCIA: Analítica y MGTE
+NORMA: Res. 001058/2026; Res. 2117/2025
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="D2" name="Auditoría de seguridad y concordancia"><bpmn:documentation>MÉTODO DE ANÁLISIS: 100% RX + muestra semanal C + eventos; regla–médico.
+CRITERIO DE DECISIÓN: Gobernanza: concordancia ≥85%; 0 eventos atribuibles.
+ALTERNATIVAS: Si falla: pausar sugerencias, revisar árbol y reentrenar.
+EVIDENCIA: E2/E5/E6; umbral de gobernanza, no clínico
+NORMA: Res. 2654/2019 art.27; CONPES 4144/2025
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:task id="D3" name="Cierre, seguimiento y recalibración"><bpmn:documentation>MÉTODO DE ANÁLISIS: Antes/después + RE-AIM; desenlaces 7/30 días.
+CRITERIO DE DECISIÓN: Oportunidad, seguridad, satisfacción y resolución.
+ALTERNATIVAS: Si evidencia insuficiente: no escalar; rediseñar.
+EVIDENCIA: E8 RE-AIM; mejora continua
+NORMA: Res. 001058/2026
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:task>
+<bpmn:endEvent id="E9" name="Episodio cerrado con trazabilidad"><bpmn:documentation>MÉTODO DE ANÁLISIS: Cierre con decisión, atención y seguimiento documentados.
+CRITERIO DE DECISIÓN: No hay solicitudes sin resolución ni registro.
+ALTERNATIVAS: Reabrir si nueva necesidad o criterio clínico.
+EVIDENCIA: No denegación y continuidad
+NORMA: Res. 1552/2013; Res. 2117/2025
+ESPECIFICACIÓN COMPLETA: ANEXO_10_FLUJO_BPMN_PRIORIZACION.md</bpmn:documentation></bpmn:endEvent>
+<bpmn:sequenceFlow id="Flow_01" name="" sourceRef="A0" targetRef="A1"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_02" name="" sourceRef="A1" targetRef="A2"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_03" name="" sourceRef="A2" targetRef="A3"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_04" name="" sourceRef="A3" targetRef="A4"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_05" name="" sourceRef="A4" targetRef="G1"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_06" name="Sí, acepta y responde" sourceRef="G1" targetRef="A6"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Sí, acepta y responde</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_07" name="Prefiere llamada / no responde" sourceRef="G1" targetRef="A5"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Prefiere llamada / no responde</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_08" name="No desea participar" sourceRef="G1" targetRef="A7"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">No desea participar</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_09" name="" sourceRef="A5" targetRef="A5b"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_10" name="Identidad y consentimiento telefónicos" sourceRef="A5b" targetRef="A6"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Identidad y consentimiento telefónicos</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_11" name="" sourceRef="A6" targetRef="G2"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_12" name="Sí" sourceRef="G2" targetRef="B1"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Sí</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_13" name="No / falla verificación" sourceRef="G2" targetRef="A7"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">No / falla verificación</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_14" name="" sourceRef="B1" targetRef="G3"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_15" name="Sí" sourceRef="G3" targetRef="RX"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Sí</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_16" name="No" sourceRef="G3" targetRef="B2"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">No</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_17" name="" sourceRef="RX" targetRef="E2"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_18" name="" sourceRef="B2" targetRef="B3"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_19" name="" sourceRef="B3" targetRef="B4"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_20" name="" sourceRef="B4" targetRef="G4"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_21" name="Sí" sourceRef="G4" targetRef="B5"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Sí</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_22" name="No" sourceRef="G4" targetRef="B4x"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">No</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_23" name="Revisión humana" sourceRef="B4x" targetRef="B5"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Revisión humana</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_24" name="" sourceRef="B5" targetRef="B6"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_25" name="" sourceRef="B6" targetRef="G5"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_26" name="Ruta A" sourceRef="G5" targetRef="C1"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Ruta A</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_27" name="Ruta B" sourceRef="G5" targetRef="C2"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Ruta B</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_28" name="Ruta C" sourceRef="G5" targetRef="C3"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Ruta C</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_29" name="" sourceRef="C1" targetRef="C4"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_30" name="" sourceRef="C2" targetRef="C4"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_31" name="" sourceRef="C3" targetRef="C4"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_32" name="" sourceRef="C4" targetRef="G6"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_33" name="Sí" sourceRef="G6" targetRef="C5"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">Sí</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_34" name="No / MANTENER" sourceRef="G6" targetRef="C6"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">No / MANTENER</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_35" name="" sourceRef="C6" targetRef="C5"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_36" name="" sourceRef="C5" targetRef="D1"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_37" name="" sourceRef="D1" targetRef="D2"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_38" name="" sourceRef="D2" targetRef="D3"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="Flow_39" name="" sourceRef="D3" targetRef="E9"></bpmn:sequenceFlow>
+</bpmn:process>
+<bpmndi:BPMNDiagram id="Diagram_Preconsulta_MI"><bpmndi:BPMNPlane id="Plane_Preconsulta_MI" bpmnElement="Proceso_Preconsulta_Priorizacion_MI">
+<bpmndi:BPMNShape id="Shape_A0" bpmnElement="A0"><dc:Bounds x="40" y="140" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="30" y="181" width="56" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_A1" bpmnElement="A1"><dc:Bounds x="110" y="120" width="150" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="100" y="205" width="170" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_A2" bpmnElement="A2"><dc:Bounds x="290" y="120" width="150" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="280" y="205" width="170" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_A3" bpmnElement="A3"><dc:Bounds x="470" y="120" width="150" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="460" y="205" width="170" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_A4" bpmnElement="A4"><dc:Bounds x="650" y="120" width="150" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="640" y="205" width="170" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_G1" bpmnElement="G1"><dc:Bounds x="830" y="132" width="56" height="56"/><bpmndi:BPMNLabel><dc:Bounds x="820" y="193" width="76" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_A5" bpmnElement="A5"><dc:Bounds x="830" y="330" width="160" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="820" y="415" width="180" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_A5b" bpmnElement="A5b"><dc:Bounds x="1030" y="330" width="160" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="1020" y="415" width="180" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_A7" bpmnElement="A7"><dc:Bounds x="1030" y="120" width="150" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="1020" y="205" width="170" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_A6" bpmnElement="A6"><dc:Bounds x="1210" y="120" width="150" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="1200" y="205" width="170" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_G2" bpmnElement="G2"><dc:Bounds x="1390" y="132" width="56" height="56"/><bpmndi:BPMNLabel><dc:Bounds x="1380" y="193" width="76" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_B1" bpmnElement="B1"><dc:Bounds x="1470" y="120" width="150" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="1460" y="205" width="170" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_G3" bpmnElement="G3"><dc:Bounds x="1650" y="132" width="56" height="56"/><bpmndi:BPMNLabel><dc:Bounds x="1640" y="193" width="76" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_RX" bpmnElement="RX"><dc:Bounds x="1650" y="330" width="180" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="1640" y="415" width="200" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_E2" bpmnElement="E2"><dc:Bounds x="1870" y="352" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="1860" y="393" width="56" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_B2" bpmnElement="B2"><dc:Bounds x="1740" y="120" width="160" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="1730" y="205" width="180" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_B3" bpmnElement="B3"><dc:Bounds x="1930" y="120" width="160" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="1920" y="205" width="180" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_B4" bpmnElement="B4"><dc:Bounds x="2120" y="120" width="160" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="2110" y="205" width="180" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_G4" bpmnElement="G4"><dc:Bounds x="2310" y="132" width="56" height="56"/><bpmndi:BPMNLabel><dc:Bounds x="2300" y="193" width="76" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_B4x" bpmnElement="B4x"><dc:Bounds x="2310" y="330" width="170" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="2300" y="415" width="190" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_B5" bpmnElement="B5"><dc:Bounds x="2510" y="120" width="170" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="2500" y="205" width="190" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_B6" bpmnElement="B6"><dc:Bounds x="2710" y="120" width="170" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="2700" y="205" width="190" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_G5" bpmnElement="G5"><dc:Bounds x="2910" y="132" width="56" height="56"/><bpmndi:BPMNLabel><dc:Bounds x="2900" y="193" width="76" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_C1" bpmnElement="C1"><dc:Bounds x="3010" y="20" width="180" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="3000" y="105" width="200" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_C2" bpmnElement="C2"><dc:Bounds x="3010" y="160" width="180" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="3000" y="245" width="200" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_C3" bpmnElement="C3"><dc:Bounds x="3010" y="300" width="180" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="3000" y="385" width="200" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_C4" bpmnElement="C4"><dc:Bounds x="3240" y="160" width="180" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="3230" y="245" width="200" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_G6" bpmnElement="G6"><dc:Bounds x="3450" y="172" width="56" height="56"/><bpmndi:BPMNLabel><dc:Bounds x="3440" y="233" width="76" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_C6" bpmnElement="C6"><dc:Bounds x="3450" y="330" width="180" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="3440" y="415" width="200" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_C5" bpmnElement="C5"><dc:Bounds x="3660" y="160" width="180" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="3650" y="245" width="200" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_D1" bpmnElement="D1"><dc:Bounds x="3870" y="160" width="180" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="3860" y="245" width="200" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_D2" bpmnElement="D2"><dc:Bounds x="4080" y="160" width="180" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="4070" y="245" width="200" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_D3" bpmnElement="D3"><dc:Bounds x="4290" y="160" width="180" height="80"/><bpmndi:BPMNLabel><dc:Bounds x="4280" y="245" width="200" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Shape_E9" bpmnElement="E9"><dc:Bounds x="4500" y="182" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="4490" y="223" width="56" height="45"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNEdge id="Edge_01" bpmnElement="Flow_01"><di:waypoint x="76" y="158"/><di:waypoint x="93" y="158"/><di:waypoint x="93" y="160"/><di:waypoint x="110" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_02" bpmnElement="Flow_02"><di:waypoint x="260" y="160"/><di:waypoint x="290" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_03" bpmnElement="Flow_03"><di:waypoint x="440" y="160"/><di:waypoint x="470" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_04" bpmnElement="Flow_04"><di:waypoint x="620" y="160"/><di:waypoint x="650" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_05" bpmnElement="Flow_05"><di:waypoint x="800" y="160"/><di:waypoint x="830" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_06" bpmnElement="Flow_06"><di:waypoint x="886" y="160"/><di:waypoint x="1210" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_07" bpmnElement="Flow_07"><di:waypoint x="886" y="160"/><di:waypoint x="858" y="160"/><di:waypoint x="858" y="370"/><di:waypoint x="830" y="370"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_08" bpmnElement="Flow_08"><di:waypoint x="886" y="160"/><di:waypoint x="1030" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_09" bpmnElement="Flow_09"><di:waypoint x="990" y="370"/><di:waypoint x="1030" y="370"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_10" bpmnElement="Flow_10"><di:waypoint x="1190" y="370"/><di:waypoint x="1200" y="370"/><di:waypoint x="1200" y="160"/><di:waypoint x="1210" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_11" bpmnElement="Flow_11"><di:waypoint x="1360" y="160"/><di:waypoint x="1390" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_12" bpmnElement="Flow_12"><di:waypoint x="1446" y="160"/><di:waypoint x="1470" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_13" bpmnElement="Flow_13"><di:waypoint x="1446" y="160"/><di:waypoint x="1030" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_14" bpmnElement="Flow_14"><di:waypoint x="1620" y="160"/><di:waypoint x="1650" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_15" bpmnElement="Flow_15"><di:waypoint x="1706" y="160"/><di:waypoint x="1678" y="160"/><di:waypoint x="1678" y="370"/><di:waypoint x="1650" y="370"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_16" bpmnElement="Flow_16"><di:waypoint x="1706" y="160"/><di:waypoint x="1740" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_17" bpmnElement="Flow_17"><di:waypoint x="1830" y="370"/><di:waypoint x="1870" y="370"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_18" bpmnElement="Flow_18"><di:waypoint x="1900" y="160"/><di:waypoint x="1930" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_19" bpmnElement="Flow_19"><di:waypoint x="2090" y="160"/><di:waypoint x="2120" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_20" bpmnElement="Flow_20"><di:waypoint x="2280" y="160"/><di:waypoint x="2310" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_21" bpmnElement="Flow_21"><di:waypoint x="2366" y="160"/><di:waypoint x="2510" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_22" bpmnElement="Flow_22"><di:waypoint x="2366" y="160"/><di:waypoint x="2338" y="160"/><di:waypoint x="2338" y="370"/><di:waypoint x="2310" y="370"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_23" bpmnElement="Flow_23"><di:waypoint x="2480" y="370"/><di:waypoint x="2495" y="370"/><di:waypoint x="2495" y="160"/><di:waypoint x="2510" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_24" bpmnElement="Flow_24"><di:waypoint x="2680" y="160"/><di:waypoint x="2710" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_25" bpmnElement="Flow_25"><di:waypoint x="2880" y="160"/><di:waypoint x="2910" y="160"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_26" bpmnElement="Flow_26"><di:waypoint x="2966" y="160"/><di:waypoint x="2988" y="160"/><di:waypoint x="2988" y="60"/><di:waypoint x="3010" y="60"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_27" bpmnElement="Flow_27"><di:waypoint x="2966" y="160"/><di:waypoint x="2988" y="160"/><di:waypoint x="2988" y="200"/><di:waypoint x="3010" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_28" bpmnElement="Flow_28"><di:waypoint x="2966" y="160"/><di:waypoint x="2988" y="160"/><di:waypoint x="2988" y="340"/><di:waypoint x="3010" y="340"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_29" bpmnElement="Flow_29"><di:waypoint x="3190" y="60"/><di:waypoint x="3215" y="60"/><di:waypoint x="3215" y="200"/><di:waypoint x="3240" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_30" bpmnElement="Flow_30"><di:waypoint x="3190" y="200"/><di:waypoint x="3240" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_31" bpmnElement="Flow_31"><di:waypoint x="3190" y="340"/><di:waypoint x="3215" y="340"/><di:waypoint x="3215" y="200"/><di:waypoint x="3240" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_32" bpmnElement="Flow_32"><di:waypoint x="3420" y="200"/><di:waypoint x="3450" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_33" bpmnElement="Flow_33"><di:waypoint x="3506" y="200"/><di:waypoint x="3660" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_34" bpmnElement="Flow_34"><di:waypoint x="3506" y="200"/><di:waypoint x="3478" y="200"/><di:waypoint x="3478" y="370"/><di:waypoint x="3450" y="370"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_35" bpmnElement="Flow_35"><di:waypoint x="3630" y="370"/><di:waypoint x="3645" y="370"/><di:waypoint x="3645" y="200"/><di:waypoint x="3660" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_36" bpmnElement="Flow_36"><di:waypoint x="3840" y="200"/><di:waypoint x="3870" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_37" bpmnElement="Flow_37"><di:waypoint x="4050" y="200"/><di:waypoint x="4080" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_38" bpmnElement="Flow_38"><di:waypoint x="4260" y="200"/><di:waypoint x="4290" y="200"/></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="Edge_39" bpmnElement="Flow_39"><di:waypoint x="4470" y="200"/><di:waypoint x="4500" y="200"/></bpmndi:BPMNEdge>
+</bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>
